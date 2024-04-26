@@ -1,2 +1,2 @@
-# SevROV-STM32-Control
- 
+# SevROV STM32 Firmware
+![pinout](Docs/pinout.jpg)
