@@ -21,7 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -125,6 +125,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
+		printf("Hello, world!\r\n");
 		HAL_SPI_TransmitReceive(&hspi1, spi1_tx_buf, spi1_rx_buf, SPI1_BUFFER_SIZE, HAL_MAX_DELAY);
     /* USER CODE BEGIN 3 */
   }

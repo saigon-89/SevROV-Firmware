@@ -20,6 +20,7 @@
 "firmware\stm32f1xx_hal_tim_ex.o"
 "firmware\stm32f1xx_hal_uart.o"
 "firmware\system_stm32f1xx.o"
+"firmware\retarget_io.o"
 --strict --scatter "Firmware\Firmware.sct"
 --summary_stderr --info summarysizes --map --load_addr_map_info --xref --callgraph --symbols
 --info sizes --info totals --info unused --info veneers
