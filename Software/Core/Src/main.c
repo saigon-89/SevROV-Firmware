@@ -69,7 +69,72 @@ static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
+static float Clamp(float value, float min, float max) {
+  return (value < min) ? min : (value > max) ? max : value;
+}
 
+static uint16_t DutyCycleToCCRx(float duty) {
+	duty = Clamp(duty, 0.0, 100.0);
+  return (uint16_t)((float)UINT16_MAX * (duty / 100.0f));
+}
+
+static uint16_t ServoLoadToCCRx(float load) {
+	load = Clamp(load, -100.0, 100.0);
+	float in_min = -100.0;
+	float in_max = 100.0;
+	float out_min = 5.0;
+	float out_max = 10.0;
+	float duty = (load - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+  return DutyCycleToCCRx(duty);
+}
+
+void PWM_MOT1_SetServo(float load) {
+  WRITE_REG(TIM1->CCR3, ServoLoadToCCRx(load));
+}
+
+void PWM_MOT2_SetServo(float load) {
+  WRITE_REG(TIM1->CCR2, ServoLoadToCCRx(load));
+}
+
+void PWM_MOT3_SetServo(float load) {
+  WRITE_REG(TIM1->CCR1, ServoLoadToCCRx(load));
+}
+
+void PWM_MAN1_SetDutyCycle(float duty) {
+	WRITE_REG(TIM2->CCR2, DutyCycleToCCRx(duty));
+}
+
+void PWM_MAN2_SetDutyCycle(float duty) {
+	WRITE_REG(TIM2->CCR3, DutyCycleToCCRx(duty));
+}
+
+void PWM_MOT8_SetServo(float load) {
+  WRITE_REG(TIM2->CCR4, ServoLoadToCCRx(load));
+}
+
+void PWM_MOT4_SetServo(float load) {
+  WRITE_REG(TIM3->CCR4, ServoLoadToCCRx(load));
+}
+
+void PWM_MOT5_SetServo(float load) {
+  WRITE_REG(TIM3->CCR3, ServoLoadToCCRx(load));
+}
+
+void PWM_MOT6_SetServo(float load) {
+  WRITE_REG(TIM3->CCR2, ServoLoadToCCRx(load));
+}
+
+void PWM_MOT7_SetServo(float load) {
+  WRITE_REG(TIM3->CCR1, ServoLoadToCCRx(load));
+}
+
+void PWM_LED_SetDutyCycle(float duty) {
+	WRITE_REG(TIM4->CCR4, DutyCycleToCCRx(duty));
+}
+
+void PWM_SERVO_SetServo(float load) {
+	WRITE_REG(TIM4->CCR3, ServoLoadToCCRx(load));
+}
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -84,7 +149,10 @@ static void MX_USART3_UART_Init(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	for (size_t i = 0; i < SPI1_BUFFER_SIZE; i++)
+	{
+	  spi1_tx_buf[i] = i;
+	}
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -114,10 +182,18 @@ int main(void)
   MX_TIM4_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-	for (size_t i = 0; i < SPI1_BUFFER_SIZE; i++)
-	{
-	  spi1_tx_buf[i] = i;
-	}
+	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
+	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
+	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -125,9 +201,18 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-		printf("Hello, world!\r\n");
-		HAL_SPI_TransmitReceive(&hspi1, spi1_tx_buf, spi1_rx_buf, SPI1_BUFFER_SIZE, HAL_MAX_DELAY);
+
     /* USER CODE BEGIN 3 */
+		printf("Hello, world!\r\n");
+		// HAL_SPI_TransmitReceive(&hspi1, spi1_tx_buf, spi1_rx_buf, SPI1_BUFFER_SIZE, HAL_MAX_DELAY);
+    PWM_MOT1_SetServo(-100.0);
+		PWM_MOT2_SetServo(-100.0);
+		PWM_MOT3_SetServo(-100.0);
+		PWM_MOT4_SetServo(-100.0);
+		PWM_MOT5_SetServo(-100.0);
+		PWM_MOT6_SetServo(-100.0);
+		PWM_MOT7_SetServo(-100.0);
+		PWM_MOT8_SetServo(-100.0);
   }
   /* USER CODE END 3 */
 }
@@ -296,7 +381,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 0;
+  htim1.Init.Prescaler = 21;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim1.Init.Period = 65535;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -378,7 +463,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 0;
+  htim2.Init.Prescaler = 21;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 65535;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -445,7 +530,7 @@ static void MX_TIM3_Init(void)
 
   /* USER CODE END TIM3_Init 1 */
   htim3.Instance = TIM3;
-  htim3.Init.Prescaler = 0;
+  htim3.Init.Prescaler = 21;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim3.Init.Period = 65535;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
@@ -516,7 +601,7 @@ static void MX_TIM4_Init(void)
 
   /* USER CODE END TIM4_Init 1 */
   htim4.Instance = TIM4;
-  htim4.Init.Prescaler = 0;
+  htim4.Init.Prescaler = 21;
   htim4.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim4.Init.Period = 65535;
   htim4.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
