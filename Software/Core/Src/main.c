@@ -26,12 +26,37 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+typedef struct __attribute__((packed)) {
+  uint8_t MagicStart;
+  uint64_t Flags;
+  
+  float DesMotServo[6];
+  float DesManQ[3];
+  uint8_t Padding[154];
+  
+  uint8_t MagicEnd;
+} SPI_ControlPackageTypeDef;
 
+typedef struct __attribute__((packed)) {
+  uint8_t MagicStart;
+  uint64_t Flags;
+  
+  float ManQ[3];
+  float Euler[3];
+  uint8_t Padding[166];
+  
+  uint8_t MagicEnd;
+} SPI_TelemetryPackageTypeDef;
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define SPI1_BUFFER_SIZE 256
+
+#define SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG(x) (1 << x)
+#define SPI_CONTROL_PACKAGE_DES_MAN_Qx_FLAG(x) (1 << (6 + x))
+
+#define SPI_TELEMETRY_PACKAGE_MAN_Qx_FLAG(x) (1 << x)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -69,6 +94,36 @@ static void MX_TIM3_Init(void);
 static void MX_TIM4_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
+static float Clamp(float value, float min, float max);
+
+static uint16_t DutyCycleToCCRx(float duty);
+
+static uint16_t ServoLoadToCCRx(float load);
+
+void PWM_MOT1_SetServo(float load);
+void PWM_MOT2_SetServo(float load);
+void PWM_MOT3_SetServo(float load);
+void PWM_MOT4_SetServo(float load);
+void PWM_MOT5_SetServo(float load);
+void PWM_MOT6_SetServo(float load);
+void PWM_MOT7_SetServo(float load);
+void PWM_MOT8_SetServo(float load);
+
+void PWM_MAN1_SetDutyCycle(float duty);
+void PWM_MAN2_SetDutyCycle(float duty);
+
+void PWM_LED_SetDutyCycle(float duty);
+
+void PWM_SERVO_SetServo(float load);
+
+HAL_StatusTypeDef PACKAGE_GetDesMotServo(SPI_ControlPackageTypeDef *package, uint8_t idx, float *servo);
+HAL_StatusTypeDef PACKAGE_GetDesManQ(SPI_ControlPackageTypeDef *package, uint8_t idx, float *q);
+
+HAL_StatusTypeDef PACKAGE_SetManQ(SPI_TelemetryPackageTypeDef *package, uint8_t idx, float q);
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
 static float Clamp(float value, float min, float max) {
   return (value < min) ? min : (value > max) ? max : value;
 }
@@ -135,11 +190,33 @@ void PWM_LED_SetDutyCycle(float duty) {
 void PWM_SERVO_SetServo(float load) {
 	WRITE_REG(TIM4->CCR3, ServoLoadToCCRx(load));
 }
-/* USER CODE END PFP */
 
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
+HAL_StatusTypeDef PACKAGE_GetDesMotServo(SPI_ControlPackageTypeDef *package, uint8_t idx, float *servo) {
+  if (idx >= 6) return HAL_ERROR;
+  if (package->Flags & SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG(idx)) {
+    *servo = package->DesMotServo[idx];
+    package->Flags &= ~SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG(idx);
+    return HAL_OK;
+  }
+  return HAL_ERROR;
+}
 
+HAL_StatusTypeDef PACKAGE_GetDesManQ(SPI_ControlPackageTypeDef *package, uint8_t idx, float *q) {
+  if (idx >= 3) return HAL_ERROR;
+  if (package->Flags & SPI_CONTROL_PACKAGE_DES_MAN_Qx_FLAG(idx)) {
+    *q = package->DesManQ[idx];
+    package->Flags &= ~SPI_CONTROL_PACKAGE_DES_MAN_Qx_FLAG(idx);
+    return HAL_OK;
+  }
+  return HAL_ERROR;
+}
+
+HAL_StatusTypeDef PACKAGE_SetManQ(SPI_TelemetryPackageTypeDef *package, uint8_t idx, float q) {
+  if (idx >= 3) return HAL_ERROR;
+  package->ManQ[idx] = q;
+  package->Flags |= SPI_TELEMETRY_PACKAGE_MAN_Qx_FLAG(idx);
+  return HAL_OK;
+}
 /* USER CODE END 0 */
 
 /**
