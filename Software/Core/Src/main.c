@@ -30,9 +30,9 @@ typedef struct __attribute__((packed)) {
   uint8_t MagicStart;
   uint64_t Flags;
   
-  float DesMotServo[6];
+  float DesMotServo[8];
   float DesManQ[3];
-  uint8_t Padding[154];
+  uint8_t Padding[146];
   
   uint8_t MagicEnd;
 } SPI_ControlPackageTypeDef;
@@ -51,10 +51,10 @@ typedef struct __attribute__((packed)) {
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SPI1_BUFFER_SIZE 256
+#define SPI_BUFFER_SIZE sizeof(SPI_ControlPackageTypeDef)
 
 #define SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG(x) (1 << x)
-#define SPI_CONTROL_PACKAGE_DES_MAN_Qx_FLAG(x) (1 << (6 + x))
+#define SPI_CONTROL_PACKAGE_DES_MAN_Qx_FLAG(x) (1 << (8 + x))
 
 #define SPI_TELEMETRY_PACKAGE_MAN_Qx_FLAG(x) (1 << x)
 /* USER CODE END PD */
@@ -78,8 +78,8 @@ TIM_HandleTypeDef htim4;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
-static uint8_t spi1_rx_buf[SPI1_BUFFER_SIZE] = { 0 };
-static uint8_t spi1_tx_buf[SPI1_BUFFER_SIZE] = { 0 };
+static SPI_ControlPackageTypeDef spi1_rx_buf = { 0 };
+static SPI_TelemetryPackageTypeDef spi1_tx_buf = { 0 };
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -108,6 +108,7 @@ void PWM_MOT5_SetServo(float load);
 void PWM_MOT6_SetServo(float load);
 void PWM_MOT7_SetServo(float load);
 void PWM_MOT8_SetServo(float load);
+HAL_StatusTypeDef PWM_MOTx_SetServo(uint8_t idx, float load);
 
 void PWM_MAN1_SetDutyCycle(float duty);
 void PWM_MAN2_SetDutyCycle(float duty);
@@ -120,6 +121,8 @@ HAL_StatusTypeDef PACKAGE_GetDesMotServo(SPI_ControlPackageTypeDef *package, uin
 HAL_StatusTypeDef PACKAGE_GetDesManQ(SPI_ControlPackageTypeDef *package, uint8_t idx, float *q);
 
 HAL_StatusTypeDef PACKAGE_SetManQ(SPI_TelemetryPackageTypeDef *package, uint8_t idx, float q);
+
+HAL_StatusTypeDef PACKAGE_TelemetryPackageInit(SPI_TelemetryPackageTypeDef *package);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -191,8 +194,30 @@ void PWM_SERVO_SetServo(float load) {
 	WRITE_REG(TIM4->CCR3, ServoLoadToCCRx(load));
 }
 
+HAL_StatusTypeDef PWM_MOTx_SetServo(uint8_t idx, float load) {
+  if (idx >= 8) return HAL_ERROR;
+	if (idx == 0) {
+	  PWM_MOT1_SetServo(load);
+	} else if (idx == 1) {
+		PWM_MOT2_SetServo(load);
+	} else if (idx == 2) {
+		PWM_MOT3_SetServo(load);
+	} else if (idx == 3) {
+		PWM_MOT4_SetServo(load);
+	} else if (idx == 4) {
+		PWM_MOT5_SetServo(load);
+	} else if (idx == 5) {
+		PWM_MOT6_SetServo(load);
+	} else if (idx == 6) {
+		PWM_MOT7_SetServo(load);
+	} else if (idx == 7) {
+		PWM_MOT8_SetServo(load);
+	}
+	return HAL_OK;
+}
+
 HAL_StatusTypeDef PACKAGE_GetDesMotServo(SPI_ControlPackageTypeDef *package, uint8_t idx, float *servo) {
-  if (idx >= 6) return HAL_ERROR;
+  if (idx >= 8) return HAL_ERROR;
   if (package->Flags & SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG(idx)) {
     *servo = package->DesMotServo[idx];
     package->Flags &= ~SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG(idx);
@@ -217,6 +242,20 @@ HAL_StatusTypeDef PACKAGE_SetManQ(SPI_TelemetryPackageTypeDef *package, uint8_t 
   package->Flags |= SPI_TELEMETRY_PACKAGE_MAN_Qx_FLAG(idx);
   return HAL_OK;
 }
+
+HAL_StatusTypeDef PACKAGE_TelemetryPackageInit(SPI_TelemetryPackageTypeDef *package) {
+  if (package == NULL) return HAL_ERROR;
+	package->MagicStart = 0xAB;
+	package->MagicEnd = 0xCD;
+	return HAL_OK;
+}
+
+HAL_StatusTypeDef PACKAGE_ControlPackageCheck(SPI_ControlPackageTypeDef *package) {
+  if (package == NULL) return HAL_ERROR;
+	if (package->MagicStart != 0xAB) return HAL_ERROR;
+	if (package->MagicEnd != 0xCD) return HAL_ERROR;
+	return HAL_OK;
+}
 /* USER CODE END 0 */
 
 /**
@@ -226,10 +265,7 @@ HAL_StatusTypeDef PACKAGE_SetManQ(SPI_TelemetryPackageTypeDef *package, uint8_t 
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	for (size_t i = 0; i < SPI1_BUFFER_SIZE; i++)
-	{
-	  spi1_tx_buf[i] = i;
-	}
+	PACKAGE_TelemetryPackageInit(&spi1_tx_buf);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -280,16 +316,20 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		printf("Hello, world!\r\n");
-		// HAL_SPI_TransmitReceive(&hspi1, spi1_tx_buf, spi1_rx_buf, SPI1_BUFFER_SIZE, HAL_MAX_DELAY);
-    PWM_MOT1_SetServo(-100.0);
-		PWM_MOT2_SetServo(-100.0);
-		PWM_MOT3_SetServo(-100.0);
-		PWM_MOT4_SetServo(-100.0);
-		PWM_MOT5_SetServo(-100.0);
-		PWM_MOT6_SetServo(-100.0);
-		PWM_MOT7_SetServo(-100.0);
-		PWM_MOT8_SetServo(-100.0);
+		PACKAGE_SetManQ(&spi1_tx_buf, 0, 13.5);
+		PACKAGE_SetManQ(&spi1_tx_buf, 1, 53.1);
+		printf("+++++++++++++++++++++++\r\n");
+		HAL_SPI_TransmitReceive(&hspi1, (uint8_t *)&spi1_tx_buf, (uint8_t *)&spi1_rx_buf, SPI_BUFFER_SIZE, HAL_MAX_DELAY);
+		spi1_tx_buf.Flags = 0;
+		if (PACKAGE_ControlPackageCheck(&spi1_rx_buf) == HAL_OK) {
+		  float servo;
+			for (uint8_t idx = 0; idx < 8; idx++) {
+				if (PACKAGE_GetDesMotServo(&spi1_rx_buf, idx, &servo) == HAL_OK) {
+					printf("SERVO[%d]: %.2f\r\n", idx, servo);
+					PWM_MOTx_SetServo(idx, servo);
+				}
+			}
+		}
   }
   /* USER CODE END 3 */
 }
