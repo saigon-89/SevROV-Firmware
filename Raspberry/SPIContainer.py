@@ -80,7 +80,7 @@ class SPI_Xfer_Container:
                 offset = TxBufferOffsets.MAN_Q + 4 * index
                 struct.pack_into('f', self.tx_buffer, offset, self.des_man_q[index])
 
-        self.tx_refresh_flags = 0
+        self.tx_refresh_flags = np.uint64(0)
 
     def transfer(self):
         self._fill_tx_buffer()
