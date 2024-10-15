@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include "lsm6ds33.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -30,9 +31,10 @@ typedef struct __attribute__((packed)) {
   uint8_t MagicStart;
   uint64_t Flags;
   
-  float DesMotServo[8];
-  float DesManQ[3];
-  uint8_t Padding[146];
+  float DesMotServo[6];
+  float DesCamServo;
+	float DesLED[2];
+  uint8_t Padding[154];
   
   uint8_t MagicEnd;
 } SPI_ControlPackageTypeDef;
@@ -41,9 +43,14 @@ typedef struct __attribute__((packed)) {
   uint8_t MagicStart;
   uint64_t Flags;
   
-  float ManQ[3];
-  float Euler[3];
-  uint8_t Padding[166];
+  float IMUEuler[3];
+	float IMUAccel[3];
+	float IMUMagnet[3];
+  float CurrentGeneral;
+	float CurrentLightLeft;
+	float CurrentLightRight;
+	float Voltage24V;
+  uint8_t Padding[138];
   
   uint8_t MagicEnd;
 } SPI_TelemetryPackageTypeDef;
@@ -53,10 +60,18 @@ typedef struct __attribute__((packed)) {
 /* USER CODE BEGIN PD */
 #define SPI_BUFFER_SIZE sizeof(SPI_ControlPackageTypeDef)
 
-#define SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG(x) (1 << x)
-#define SPI_CONTROL_PACKAGE_DES_MAN_Qx_FLAG(x) (1 << (8 + x))
+#define SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG (1 << 0)
+#define SPI_CONTROL_PACKAGE_DES_CAM_SERVO_FLAG (1 << 1)
+#define SPI_CONTROL_PACKAGE_DES_LED_FLAG (1 << 2)
 
-#define SPI_TELEMETRY_PACKAGE_MAN_Qx_FLAG(x) (1 << x)
+#define SPI_TELEMETRY_PACKAGE_IMU_EULERx_FLAG (1 << 0)
+#define SPI_TELEMETRY_PACKAGE_IMU_ACCELx_FLAG (1 << 1)
+#define SPI_TELEMETRY_PACKAGE_IMU_MAGNETx_FLAG (1 << 2)
+#define SPI_TELEMETRY_PACKAGE_CURRENT_GENERAL_FLAG (1 << 3)
+#define SPI_TELEMETRY_PACKAGE_CURRENT_LIGHT_LEFT_FLAG (1 << 4)
+#define SPI_TELEMETRY_PACKAGE_CURRENT_LIGHT_RIGHT_FLAG (1 << 5)
+#define SPI_TELEMETRY_PACKAGE_VOLTAGE_24V_FLAG (1 << 6)
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -78,6 +93,8 @@ TIM_HandleTypeDef htim4;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
+LSM6_HandleTypeDef hlsm6;
+
 static SPI_ControlPackageTypeDef spi1_rx_buf = { 0 };
 static SPI_TelemetryPackageTypeDef spi1_tx_buf = { 0 };
 /* USER CODE END PV */
@@ -117,10 +134,17 @@ void PWM_LED_SetDutyCycle(float duty);
 
 void PWM_SERVO_SetServo(float load);
 
-HAL_StatusTypeDef PACKAGE_GetDesMotServo(SPI_ControlPackageTypeDef *package, uint8_t idx, float *servo);
-HAL_StatusTypeDef PACKAGE_GetDesManQ(SPI_ControlPackageTypeDef *package, uint8_t idx, float *q);
+HAL_StatusTypeDef PACKAGE_GetDesMotServo(SPI_ControlPackageTypeDef *package, float servo[6]);
+HAL_StatusTypeDef PACKAGE_GetDesCamServo(SPI_ControlPackageTypeDef *package, float *servo);
+HAL_StatusTypeDef PACKAGE_GetDesLED(SPI_ControlPackageTypeDef *package, float led[2]);
 
-HAL_StatusTypeDef PACKAGE_SetManQ(SPI_TelemetryPackageTypeDef *package, uint8_t idx, float q);
+HAL_StatusTypeDef PACKAGE_SetIMUEuler(SPI_TelemetryPackageTypeDef *package, float euler[3]);
+HAL_StatusTypeDef PACKAGE_SetIMUAccel(SPI_TelemetryPackageTypeDef *package, float accel[3]);
+HAL_StatusTypeDef PACKAGE_SetIMUMagnet(SPI_TelemetryPackageTypeDef *package, float magnet[3]);
+HAL_StatusTypeDef PACKAGE_SetCurrentGeneral(SPI_TelemetryPackageTypeDef *package, float current);
+HAL_StatusTypeDef PACKAGE_SetCurrentLightLeft(SPI_TelemetryPackageTypeDef *package, float current);
+HAL_StatusTypeDef PACKAGE_SetCurrentLightRight(SPI_TelemetryPackageTypeDef *package, float current);
+HAL_StatusTypeDef PACKAGE_SetVoltage24V(SPI_TelemetryPackageTypeDef *package, float voltage);
 
 HAL_StatusTypeDef PACKAGE_TelemetryPackageInit(SPI_TelemetryPackageTypeDef *package);
 /* USER CODE END PFP */
@@ -195,51 +219,99 @@ void PWM_SERVO_SetServo(float load) {
 }
 
 HAL_StatusTypeDef PWM_MOTx_SetServo(uint8_t idx, float load) {
-  if (idx >= 8) return HAL_ERROR;
+  if (idx >= 6) return HAL_ERROR;
 	if (idx == 0) {
-	  PWM_MOT1_SetServo(load);
+	  PWM_MOT3_SetServo(load);
 	} else if (idx == 1) {
-		PWM_MOT2_SetServo(load);
-	} else if (idx == 2) {
-		PWM_MOT3_SetServo(load);
-	} else if (idx == 3) {
 		PWM_MOT4_SetServo(load);
-	} else if (idx == 4) {
+	} else if (idx == 2) {
 		PWM_MOT5_SetServo(load);
-	} else if (idx == 5) {
+	} else if (idx == 3) {
 		PWM_MOT6_SetServo(load);
-	} else if (idx == 6) {
+	} else if (idx == 4) {
 		PWM_MOT7_SetServo(load);
-	} else if (idx == 7) {
+	} else if (idx == 5) {
 		PWM_MOT8_SetServo(load);
 	}
 	return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_GetDesMotServo(SPI_ControlPackageTypeDef *package, uint8_t idx, float *servo) {
-  if (idx >= 8) return HAL_ERROR;
-  if (package->Flags & SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG(idx)) {
-    *servo = package->DesMotServo[idx];
-    package->Flags &= ~SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG(idx);
+HAL_StatusTypeDef PACKAGE_GetDesMotServo(SPI_ControlPackageTypeDef *package, float servo[6]) {
+  if (package->Flags & SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG) {
+		for (size_t idx = 0; idx < 6; idx++) {
+			servo[idx] = package->DesMotServo[idx];
+		}
+    package->Flags &= ~SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG;
     return HAL_OK;
   }
   return HAL_ERROR;
 }
 
-HAL_StatusTypeDef PACKAGE_GetDesManQ(SPI_ControlPackageTypeDef *package, uint8_t idx, float *q) {
-  if (idx >= 3) return HAL_ERROR;
-  if (package->Flags & SPI_CONTROL_PACKAGE_DES_MAN_Qx_FLAG(idx)) {
-    *q = package->DesManQ[idx];
-    package->Flags &= ~SPI_CONTROL_PACKAGE_DES_MAN_Qx_FLAG(idx);
+HAL_StatusTypeDef PACKAGE_GetDesCamServo(SPI_ControlPackageTypeDef *package, float *servo) {
+  if (package->Flags & SPI_CONTROL_PACKAGE_DES_CAM_SERVO_FLAG) {
+    *servo = package->DesCamServo;
+    package->Flags &= ~SPI_CONTROL_PACKAGE_DES_CAM_SERVO_FLAG;
+    return HAL_OK;
+  }
+  return HAL_OK;
+}
+
+HAL_StatusTypeDef PACKAGE_GetDesLED(SPI_ControlPackageTypeDef *package, float led[2]) {
+  if (package->Flags & SPI_CONTROL_PACKAGE_DES_LED_FLAG) {
+		for (size_t idx = 0; idx < 2; idx++) {
+			led[idx] = package->DesLED[idx];
+		}
+    package->Flags &= ~SPI_CONTROL_PACKAGE_DES_LED_FLAG;
     return HAL_OK;
   }
   return HAL_ERROR;
 }
 
-HAL_StatusTypeDef PACKAGE_SetManQ(SPI_TelemetryPackageTypeDef *package, uint8_t idx, float q) {
-  if (idx >= 3) return HAL_ERROR;
-  package->ManQ[idx] = q;
-  package->Flags |= SPI_TELEMETRY_PACKAGE_MAN_Qx_FLAG(idx);
+HAL_StatusTypeDef PACKAGE_SetIMUEuler(SPI_TelemetryPackageTypeDef *package, float euler[3]) {
+	for (size_t idx = 0; idx < 3; idx++) {
+		package->IMUEuler[idx] = euler[idx];
+	}
+  package->Flags |= SPI_TELEMETRY_PACKAGE_IMU_EULERx_FLAG;
+  return HAL_OK;
+}
+
+HAL_StatusTypeDef PACKAGE_SetIMUAccel(SPI_TelemetryPackageTypeDef *package, float accel[3]) {
+	for (size_t idx = 0; idx < 3; idx++) {
+		package->IMUAccel[idx] = accel[idx];
+	}
+  package->Flags |= SPI_TELEMETRY_PACKAGE_IMU_ACCELx_FLAG;
+  return HAL_OK;
+}
+
+HAL_StatusTypeDef PACKAGE_SetIMUMagnet(SPI_TelemetryPackageTypeDef *package, float magnet[3]) {
+	for (size_t idx = 0; idx < 3; idx++) {
+		package->IMUMagnet[idx] = magnet[idx];
+	}
+  package->Flags |= SPI_TELEMETRY_PACKAGE_IMU_MAGNETx_FLAG;
+  return HAL_OK;
+}
+
+HAL_StatusTypeDef PACKAGE_SetCurrentGeneral(SPI_TelemetryPackageTypeDef *package, float current) {
+	package->CurrentGeneral = current;
+  package->Flags |= SPI_TELEMETRY_PACKAGE_CURRENT_GENERAL_FLAG;
+  return HAL_OK;
+}
+
+HAL_StatusTypeDef PACKAGE_SetCurrentLightLeft(SPI_TelemetryPackageTypeDef *package, float current) {
+	package->CurrentLightLeft = current;
+  package->Flags |= SPI_TELEMETRY_PACKAGE_CURRENT_LIGHT_LEFT_FLAG;
+  return HAL_OK;
+}
+
+HAL_StatusTypeDef PACKAGE_SetCurrentLightRight(SPI_TelemetryPackageTypeDef *package, float current) {
+	package->CurrentLightRight = current;
+  package->Flags |= SPI_TELEMETRY_PACKAGE_CURRENT_LIGHT_RIGHT_FLAG;
+  return HAL_OK;
+}
+
+HAL_StatusTypeDef PACKAGE_SetVoltage24V(SPI_TelemetryPackageTypeDef *package, float voltage) {
+	package->Voltage24V = voltage;
+  package->Flags |= SPI_TELEMETRY_PACKAGE_VOLTAGE_24V_FLAG;
   return HAL_OK;
 }
 
@@ -256,6 +328,7 @@ HAL_StatusTypeDef PACKAGE_ControlPackageCheck(SPI_ControlPackageTypeDef *package
 	if (package->MagicEnd != 0xCD) return HAL_ERROR;
 	return HAL_OK;
 }
+
 /* USER CODE END 0 */
 
 /**
@@ -295,6 +368,9 @@ int main(void)
   MX_TIM4_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
+	LSM6_Init(&hlsm6, &hi2c2);
+	LSM6_Enable_Default(&hlsm6);
+	
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
@@ -316,20 +392,49 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		PACKAGE_SetManQ(&spi1_tx_buf, 0, 13.5);
-		PACKAGE_SetManQ(&spi1_tx_buf, 1, 53.1);
+		float euler[] = { 13.5, 10.1, 53.1 };
+		float accel[] = { 0.23, 0.12, 9.53 };
+		float magnet[] = { 1.27, 2.56, 6.12 };
+		PACKAGE_SetIMUEuler(&spi1_tx_buf, euler);
+		PACKAGE_SetIMUAccel(&spi1_tx_buf, accel);
+		PACKAGE_SetIMUMagnet(&spi1_tx_buf, magnet);
+		PACKAGE_SetCurrentGeneral(&spi1_tx_buf, 0.250);
+		PACKAGE_SetCurrentLightLeft(&spi1_tx_buf, 0.242);
+		PACKAGE_SetCurrentLightRight(&spi1_tx_buf, 0.234);
+		PACKAGE_SetVoltage24V(&spi1_tx_buf, 23.85);
+		
 		printf("+++++++++++++++++++++++\r\n");
+#if 0
 		HAL_SPI_TransmitReceive(&hspi1, (uint8_t *)&spi1_tx_buf, (uint8_t *)&spi1_rx_buf, SPI_BUFFER_SIZE, HAL_MAX_DELAY);
 		spi1_tx_buf.Flags = 0;
 		if (PACKAGE_ControlPackageCheck(&spi1_rx_buf) == HAL_OK) {
-		  float servo;
-			for (uint8_t idx = 0; idx < 8; idx++) {
-				if (PACKAGE_GetDesMotServo(&spi1_rx_buf, idx, &servo) == HAL_OK) {
-					printf("SERVO[%d]: %.2f\r\n", idx, servo);
-					PWM_MOTx_SetServo(idx, servo);
+		  float mot_servo[6];
+			float cam_servo;
+			float led[2];
+			if (PACKAGE_GetDesMotServo(&spi1_rx_buf, mot_servo) == HAL_OK) {
+				for (uint8_t idx = 0; idx < 6; idx++) {
+					printf("MOT_SERVO[%d]: %.2f\r\n", idx, mot_servo[idx]);
+					PWM_MOTx_SetServo(idx, mot_servo[idx]);
+				}
+			}
+
+			if (PACKAGE_GetDesCamServo(&spi1_rx_buf, &cam_servo) == HAL_OK) {
+				printf("CAM_SERVO: %.2f\r\n", cam_servo);
+			}
+			
+			if (PACKAGE_GetDesLED(&spi1_rx_buf, led) == HAL_OK) {
+				for (uint8_t idx = 0; idx < 2; idx++) {
+					printf("LED[%d]: %.2f\r\n", idx, led[idx]);
 				}
 			}
 		}
+#endif
+		LSM6_Read(&hlsm6);
+		printf("ACCEL[x]: %d\n", hlsm6.Accel.x);
+		printf("ACCEL[y]: %d\n", hlsm6.Accel.y);
+		printf("ACCEL[z]: %d\n", hlsm6.Accel.z);
+		HAL_Delay(100);
+		
   }
   /* USER CODE END 3 */
 }

@@ -31,3 +31,4 @@ firmware\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim.h
 firmware\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_tim_ex.h
 firmware\main.o: ../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_uart.h
 firmware\main.o: C:\Keil_v5\ARM\ARMCC\Bin\..\include\stdio.h
+firmware\main.o: ../Core/Inc/lsm6ds33.h
