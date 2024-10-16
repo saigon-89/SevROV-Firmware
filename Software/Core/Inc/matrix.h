@@ -11,11 +11,22 @@ typedef struct {
   int16_t x, y, z;
 } Vector3dTypeDef;
 
-void LSM6_Vector_Cross(Vector3fTypeDef *a, Vector3fTypeDef *b,
-                       Vector3fTypeDef *out);
+typedef struct {
+  float x, y, z, w;
+} Quaternion3fTypeDef;
 
-float LSM6_Vector_Dot(Vector3fTypeDef *a, Vector3fTypeDef *b);
+typedef struct {
+  int16_t x, y, z, w;
+} Quaternion3dTypeDef;
 
-void LSM6_Vector_Normalize(Vector3fTypeDef *a);
+void Vector3f_Cross(Vector3fTypeDef *a, Vector3fTypeDef *b, Vector3fTypeDef *out);
+
+float Vector3f_Dot(Vector3fTypeDef *a, Vector3fTypeDef *b);
+
+void Vector3f_Normalize(Vector3fTypeDef *a);
+
+float Vector3d_Max(Vector3dTypeDef *a);
+
+float Vector3d_Min(Vector3dTypeDef *a);
 
 #endif

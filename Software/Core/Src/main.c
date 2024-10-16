@@ -25,6 +25,7 @@
 
 #include "lsm6ds33.h"
 #include "lis3mdl.h"
+#include "minimu9.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -97,6 +98,7 @@ UART_HandleTypeDef huart3;
 /* USER CODE BEGIN PV */
 LSM6_HandleTypeDef hlsm6;
 LIS3MDL_HandleTypeDef hlis3mdl;
+MINIMU9_HandleTypeDef hminimu9;
 
 static SPI_ControlPackageTypeDef spi1_rx_buf = { 0 };
 static SPI_TelemetryPackageTypeDef spi1_tx_buf = { 0 };
@@ -378,6 +380,7 @@ int main(void)
 	LSM6_Enable_Default(&hlsm6);
 	LIS3MDL_Init(&hlis3mdl, &hi2c2);
 	LIS3MDL_Enable_Default(&hlis3mdl);
+	MINIMU9_Init(&hminimu9, &hlsm6, &hlis3mdl);
 	
 	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
@@ -437,15 +440,15 @@ int main(void)
 			}
 		}
 #endif
-		LSM6_Read_Acc(&hlsm6);
-		//printf("ACCEL[x]: %d\n", hlsm6.Accel.x);
-		//printf("ACCEL[y]: %d\n", hlsm6.Accel.y);
-		//printf("ACCEL[z]: %d\n", hlsm6.Accel.z);
-		LSM6_Read_Gyro(&hlsm6);
-		LIS3MDL_Read_Mag(&hlis3mdl);
-		//printf("MAG[x]: %d\n", hlis3mdl.Mag.x);
-		//printf("MAG[y]: %d\n", hlis3mdl.Mag.y);
-		//printf("MAG[z]: %d\n", hlis3mdl.Mag.z);
+		MINIMU9_Read_Accel(&hminimu9);
+		//printf("ACCEL[x]: %.2f\n", hminimu9.Accel.x);
+		//printf("ACCEL[y]: %.2f\n", hminimu9.Accel.y);
+		//printf("ACCEL[z]: %.2f\n", hminimu9.Accel.z);
+		MINIMU9_Read_Gyro(&hminimu9);
+		MINIMU9_Read_Mag(&hminimu9);
+		printf("MAG[x]: %.2f\n", hminimu9.Mag.x);
+		printf("MAG[y]: %.2f\n", hminimu9.Mag.y);
+		printf("MAG[z]: %.2f\n", hminimu9.Mag.z);
 		HAL_Delay(1000);
 		intDeltaMS = HAL_GetTick() - prevTimeMS;
 		printf("TIME: %d\n", intDeltaMS);

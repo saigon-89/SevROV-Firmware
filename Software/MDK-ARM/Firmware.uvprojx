@@ -423,6 +423,11 @@
               <FileType>1</FileType>
               <FilePath>..\Core\Src\matrix.c</FilePath>
             </File>
+            <File>
+              <FileName>minimu9.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\minimu9.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
