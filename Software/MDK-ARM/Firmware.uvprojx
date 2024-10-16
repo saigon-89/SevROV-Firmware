@@ -413,6 +413,16 @@
               <FileType>1</FileType>
               <FilePath>..\Core\Src\lsm6ds33.c</FilePath>
             </File>
+            <File>
+              <FileName>lis3mdl.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\lis3mdl.c</FilePath>
+            </File>
+            <File>
+              <FileName>matrix.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\matrix.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
