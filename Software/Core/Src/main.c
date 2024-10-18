@@ -378,6 +378,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	LSM6_Init(&hlsm6, &hi2c2);
 	LSM6_Enable_Default(&hlsm6);
+	LSM6_Measure_Offsets(&hlsm6);
 	LIS3MDL_Init(&hlis3mdl, &hi2c2);
 	LIS3MDL_Enable_Default(&hlis3mdl);
 	MINIMU9_Init(&hminimu9, &hlsm6, &hlis3mdl);
@@ -394,6 +395,13 @@ int main(void)
 	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+	
+	PWM_MOTx_SetServo(0, -0);
+	PWM_MOTx_SetServo(1, -0);
+	PWM_MOTx_SetServo(2, -0);
+	PWM_MOTx_SetServo(3, -0);
+	PWM_MOTx_SetServo(4, -0);
+	PWM_MOTx_SetServo(5, -0);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -403,9 +411,24 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		float euler[] = { 13.5, 10.1, 53.1 };
-		float accel[] = { 0.23, 0.12, 9.53 };
-		float magnet[] = { 1.27, 2.56, 6.12 };
+		float euler[] = {
+			(180.0f / 3.14f) * hminimu9.Euler.x,
+			(180.0f / 3.14f) * hminimu9.Euler.y,
+			(180.0f / 3.14f) * hminimu9.Euler.z
+		};
+
+		float accel[] = {
+			hminimu9.Accel.x,
+			hminimu9.Accel.y,
+			hminimu9.Accel.z
+		};
+
+		float magnet[] = {
+			hminimu9.Mag.x,
+			hminimu9.Mag.y,
+			hminimu9.Mag.z
+		};
+
 		PACKAGE_SetIMUEuler(&spi1_tx_buf, euler);
 		PACKAGE_SetIMUAccel(&spi1_tx_buf, accel);
 		PACKAGE_SetIMUMagnet(&spi1_tx_buf, magnet);
@@ -445,13 +468,23 @@ int main(void)
 		//printf("ACCEL[y]: %.2f\n", hminimu9.Accel.y);
 		//printf("ACCEL[z]: %.2f\n", hminimu9.Accel.z);
 		MINIMU9_Read_Gyro(&hminimu9);
+		//printf("GYRO[x]: %.2f\n", hminimu9.Gyro.x);
+		//printf("GYRO[y]: %.2f\n", hminimu9.Gyro.y);
+		//printf("GYRO[z]: %.2f\n", hminimu9.Gyro.z);
 		MINIMU9_Read_Mag(&hminimu9);
-		printf("MAG[x]: %.2f\n", hminimu9.Mag.x);
-		printf("MAG[y]: %.2f\n", hminimu9.Mag.y);
-		printf("MAG[z]: %.2f\n", hminimu9.Mag.z);
-		HAL_Delay(1000);
+		//printf("MAG[x]: %.2f\n", hminimu9.Mag.x);
+		//printf("MAG[y]: %.2f\n", hminimu9.Mag.y);
+		//printf("MAG[z]: %.2f\n", hminimu9.Mag.z);
+		HAL_Delay(20);
 		intDeltaMS = HAL_GetTick() - prevTimeMS;
-		printf("TIME: %d\n", intDeltaMS);
+		float intDelta = (float)intDeltaMS / 1000.0f;
+		//printf("dt: %.2f\n", intDelta);
+		MINIMU9_Fusion(&hminimu9, intDelta, &hminimu9.Gyro, &hminimu9.Accel, &hminimu9.Mag);
+	  //printf("phi: %.2f\n", (180.0f / 3.14f) * hminimu9.Euler.x);
+		//printf("theta: %.2f\n", (180.0f / 3.14f) * hminimu9.Euler.y);
+		//printf("psi: %.2f\n", (180.0f / 3.14f) * hminimu9.Euler.z);
+		
+		//printf("TIME: %d\n", intDeltaMS);
 		prevTimeMS = HAL_GetTick();
 		
   }

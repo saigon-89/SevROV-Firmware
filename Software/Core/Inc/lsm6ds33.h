@@ -80,6 +80,7 @@ typedef struct {
   uint8_t Address;
   Vector3dTypeDef Accel;
   Vector3dTypeDef Gyro;
+	Vector3dTypeDef GyroOffset;
 } LSM6_HandleTypeDef;
 
 HAL_StatusTypeDef LSM6_Init(LSM6_HandleTypeDef *hlsm6, I2C_HandleTypeDef *hi2c);
@@ -95,5 +96,7 @@ void LSM6_Read_Acc(LSM6_HandleTypeDef *hlsm6);
 void LSM6_Read_Gyro(LSM6_HandleTypeDef *hlsm6);
 
 void LSM6_Read(LSM6_HandleTypeDef *hlsm6);
+
+void LSM6_Measure_Offsets(LSM6_HandleTypeDef *hlsm6);
 
 #endif

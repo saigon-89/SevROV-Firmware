@@ -56,11 +56,18 @@ HAL_StatusTypeDef LIS3MDL_Init(LIS3MDL_HandleTypeDef *hlis3mdl, I2C_HandleTypeDe
 }
 
 void LIS3MDL_Enable_Default(LIS3MDL_HandleTypeDef *hlis3mdl) {
+#if 0
   LIS3MDL_Write_Reg(hlis3mdl, CTRL_REG1, 0x70);
   LIS3MDL_Write_Reg(hlis3mdl, CTRL_REG2, 0x00);
   LIS3MDL_Write_Reg(hlis3mdl, CTRL_REG3, 0x00);
   LIS3MDL_Write_Reg(hlis3mdl, CTRL_REG4, 0x0C);
   LIS3MDL_Write_Reg(hlis3mdl, CTRL_REG5, 0x40);
+#else
+  LIS3MDL_Write_Reg(hlis3mdl, CTRL_REG1, 0x70);
+  LIS3MDL_Write_Reg(hlis3mdl, CTRL_REG2, 0x00);
+  LIS3MDL_Write_Reg(hlis3mdl, CTRL_REG3, 0x00);
+  LIS3MDL_Write_Reg(hlis3mdl, CTRL_REG4, 0x0C);
+#endif
 }
 
 void LIS3MDL_Write_Reg(LIS3MDL_HandleTypeDef *hlis3mdl, uint8_t Reg, uint8_t Value) {
@@ -85,7 +92,12 @@ uint8_t LIS3MDL_Read_Reg(LIS3MDL_HandleTypeDef *hlis3mdl, uint8_t Reg) {
 void LIS3MDL_Read_Mag(LIS3MDL_HandleTypeDef *hlis3mdl) {
   uint8_t Data[6] = { 0 };
 
+#if 0
 	uint8_t Buf[] = { OUT_X_L };
+#else
+	uint8_t Buf[] = { 0x80 | OUT_X_L };
+#endif
+
   hlis3mdl->Status = HAL_I2C_Master_Transmit(hlis3mdl->hi2c, hlis3mdl->Address,
                                              Buf, sizeof(Buf), HAL_MAX_DELAY);
 

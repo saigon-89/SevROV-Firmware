@@ -57,9 +57,16 @@ HAL_StatusTypeDef LSM6_Init(LSM6_HandleTypeDef *hlsm6, I2C_HandleTypeDef *hi2c) 
 }
 
 void LSM6_Enable_Default(LSM6_HandleTypeDef *hlsm6) {
+#if 0
   LSM6_Write_Reg(hlsm6, CTRL1_XL, 0x80);
   LSM6_Write_Reg(hlsm6, CTRL2_G, 0x80);
   LSM6_Write_Reg(hlsm6, CTRL3_C, 0x04);
+#else
+	LSM6_Write_Reg(hlsm6, CTRL2_G, 0x8C);
+  LSM6_Write_Reg(hlsm6, CTRL7_G, 0x00);
+  LSM6_Write_Reg(hlsm6, CTRL1_XL, 0x8C);
+  LSM6_Write_Reg(hlsm6, CTRL3_C, 0x04);
+#endif
 }
 
 void LSM6_Write_Reg(LSM6_HandleTypeDef *hlsm6, uint8_t Reg, uint8_t Value) {
@@ -128,4 +135,24 @@ void LSM6_Read_Gyro(LSM6_HandleTypeDef *hlsm6) {
 void LSM6_Read(LSM6_HandleTypeDef *hlsm6) {
   LSM6_Read_Acc(hlsm6);
   LSM6_Read_Gyro(hlsm6);
+}
+
+void LSM6_Measure_Offsets(LSM6_HandleTypeDef *hlsm6) {
+  int32_t GyroOffsetX = 0;
+	int32_t GyroOffsetY = 0;
+	int32_t GyroOffsetZ = 0;
+
+  size_t sampleCount = 32;
+  for(size_t i = 0; i < sampleCount; i++) {
+    LSM6_Read_Gyro(hlsm6);
+		printf("GYRO: %d | %d | %d\n", hlsm6->Gyro.x, hlsm6->Gyro.y, hlsm6->Gyro.z);
+    GyroOffsetX += hlsm6->Gyro.x;
+	  GyroOffsetY += hlsm6->Gyro.y;
+	  GyroOffsetZ += hlsm6->Gyro.z;
+    HAL_Delay(20);
+  }
+  hlsm6->GyroOffset.x = GyroOffsetX / sampleCount;
+	hlsm6->GyroOffset.y = GyroOffsetY / sampleCount;
+	hlsm6->GyroOffset.z = GyroOffsetZ / sampleCount;
+	printf("MEAN: %d | %d | %d\n", hlsm6->GyroOffset.x, hlsm6->GyroOffset.y, hlsm6->GyroOffset.z);
 }
