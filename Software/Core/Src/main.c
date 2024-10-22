@@ -48,12 +48,13 @@ typedef struct __attribute__((packed)) {
   
   float IMUEuler[3];
 	float IMUAccel[3];
+	float IMUGyro[3];
 	float IMUMagnet[3];
   float CurrentGeneral;
 	float CurrentLightLeft;
 	float CurrentLightRight;
 	float Voltage24V;
-  uint8_t Padding[138];
+  uint8_t Padding[126];
   
   uint8_t MagicEnd;
 } SPI_TelemetryPackageTypeDef;
@@ -69,11 +70,12 @@ typedef struct __attribute__((packed)) {
 
 #define SPI_TELEMETRY_PACKAGE_IMU_EULERx_FLAG (1 << 0)
 #define SPI_TELEMETRY_PACKAGE_IMU_ACCELx_FLAG (1 << 1)
-#define SPI_TELEMETRY_PACKAGE_IMU_MAGNETx_FLAG (1 << 2)
-#define SPI_TELEMETRY_PACKAGE_CURRENT_GENERAL_FLAG (1 << 3)
-#define SPI_TELEMETRY_PACKAGE_CURRENT_LIGHT_LEFT_FLAG (1 << 4)
-#define SPI_TELEMETRY_PACKAGE_CURRENT_LIGHT_RIGHT_FLAG (1 << 5)
-#define SPI_TELEMETRY_PACKAGE_VOLTAGE_24V_FLAG (1 << 6)
+#define SPI_TELEMETRY_PACKAGE_IMU_GYROx_FLAG (1 << 2)
+#define SPI_TELEMETRY_PACKAGE_IMU_MAGNETx_FLAG (1 << 3)
+#define SPI_TELEMETRY_PACKAGE_CURRENT_GENERAL_FLAG (1 << 4)
+#define SPI_TELEMETRY_PACKAGE_CURRENT_LIGHT_LEFT_FLAG (1 << 5)
+#define SPI_TELEMETRY_PACKAGE_CURRENT_LIGHT_RIGHT_FLAG (1 << 6)
+#define SPI_TELEMETRY_PACKAGE_VOLTAGE_24V_FLAG (1 << 7)
 
 /* USER CODE END PD */
 
@@ -148,6 +150,7 @@ HAL_StatusTypeDef PACKAGE_GetDesLED(SPI_ControlPackageTypeDef *package, float le
 
 HAL_StatusTypeDef PACKAGE_SetIMUEuler(SPI_TelemetryPackageTypeDef *package, float euler[3]);
 HAL_StatusTypeDef PACKAGE_SetIMUAccel(SPI_TelemetryPackageTypeDef *package, float accel[3]);
+HAL_StatusTypeDef PACKAGE_SetIMUGyro(SPI_TelemetryPackageTypeDef *package, float gyro[3]);
 HAL_StatusTypeDef PACKAGE_SetIMUMagnet(SPI_TelemetryPackageTypeDef *package, float magnet[3]);
 HAL_StatusTypeDef PACKAGE_SetCurrentGeneral(SPI_TelemetryPackageTypeDef *package, float current);
 HAL_StatusTypeDef PACKAGE_SetCurrentLightLeft(SPI_TelemetryPackageTypeDef *package, float current);
@@ -291,6 +294,14 @@ HAL_StatusTypeDef PACKAGE_SetIMUAccel(SPI_TelemetryPackageTypeDef *package, floa
   return HAL_OK;
 }
 
+HAL_StatusTypeDef PACKAGE_SetIMUGyro(SPI_TelemetryPackageTypeDef *package, float gyro[3]) {
+	for (size_t idx = 0; idx < 3; idx++) {
+		package->IMUGyro[idx] = gyro[idx];
+	}
+  package->Flags |= SPI_TELEMETRY_PACKAGE_IMU_GYROx_FLAG;
+  return HAL_OK;
+}
+
 HAL_StatusTypeDef PACKAGE_SetIMUMagnet(SPI_TelemetryPackageTypeDef *package, float magnet[3]) {
 	for (size_t idx = 0; idx < 3; idx++) {
 		package->IMUMagnet[idx] = magnet[idx];
@@ -422,6 +433,12 @@ int main(void)
 			hminimu9.Accel.y,
 			hminimu9.Accel.z
 		};
+		
+		float gyro[] = {
+			hminimu9.Gyro.x,
+			hminimu9.Gyro.y,
+			hminimu9.Gyro.z
+		};
 
 		float magnet[] = {
 			hminimu9.Mag.x,
@@ -431,6 +448,7 @@ int main(void)
 
 		PACKAGE_SetIMUEuler(&spi1_tx_buf, euler);
 		PACKAGE_SetIMUAccel(&spi1_tx_buf, accel);
+		PACKAGE_SetIMUGyro(&spi1_tx_buf, gyro);
 		PACKAGE_SetIMUMagnet(&spi1_tx_buf, magnet);
 		PACKAGE_SetCurrentGeneral(&spi1_tx_buf, 0.250);
 		PACKAGE_SetCurrentLightLeft(&spi1_tx_buf, 0.242);
@@ -463,6 +481,8 @@ int main(void)
 			}
 		}
 #endif
+		
+		#if 1
 		MINIMU9_Read_Accel(&hminimu9);
 		//printf("ACCEL[x]: %.2f\n", hminimu9.Accel.x);
 		//printf("ACCEL[y]: %.2f\n", hminimu9.Accel.y);
@@ -480,13 +500,13 @@ int main(void)
 		float intDelta = (float)intDeltaMS / 1000.0f;
 		//printf("dt: %.2f\n", intDelta);
 		MINIMU9_Fusion(&hminimu9, intDelta, &hminimu9.Gyro, &hminimu9.Accel, &hminimu9.Mag);
-	  //printf("phi: %.2f\n", (180.0f / 3.14f) * hminimu9.Euler.x);
-		//printf("theta: %.2f\n", (180.0f / 3.14f) * hminimu9.Euler.y);
-		//printf("psi: %.2f\n", (180.0f / 3.14f) * hminimu9.Euler.z);
+	  printf("phi: %.2f\n", (180.0f / 3.14f) * hminimu9.Euler.x);
+		printf("theta: %.2f\n", (180.0f / 3.14f) * hminimu9.Euler.y);
+		printf("psi: %.2f\n", (180.0f / 3.14f) * hminimu9.Euler.z);
 		
 		//printf("TIME: %d\n", intDeltaMS);
 		prevTimeMS = HAL_GetTick();
-		
+		#endif
   }
   /* USER CODE END 3 */
 }

@@ -51,67 +51,7 @@ float Vector3d_Min(Vector3dTypeDef *a) {
   return min;
 }
 
-#if 0
-{
-  // NOTE if inlined, then gcc 4.2 and 4.4 get rid of the temporary (not gcc 4.3 !!)
-  // if not inlined then the cost of the return by value is huge ~ +35%,
-  // however, not inlining this function is an order of magnitude slower, so
-  // it has to be inlined, and so the return by value is not an issue
-  Matrix3 res;
-
-  const Scalar tx  = Scalar(2)*q->x;
-  const Scalar ty  = Scalar(2)*q->y;
-  const Scalar tz  = Scalar(2)*q->z;
-  const Scalar twx = tx*q->w;
-  const Scalar twy = ty*q->w;
-  const Scalar twz = tz*q->w;
-  const Scalar txx = tx*q->x;
-  const Scalar txy = ty*q->x;
-  const Scalar txz = tz*q->x;
-  const Scalar tyy = ty*q->y;
-  const Scalar tyz = tz*q->y;
-  const Scalar tzz = tz*q->z;
-
-  res.coeffRef(0,0) = Scalar(1)-(tyy+tzz);
-  res.coeffRef(0,1) = txy-twz;
-  res.coeffRef(0,2) = txz+twy;
-  res.coeffRef(1,0) = txy+twz;
-  res.coeffRef(1,1) = Scalar(1)-(txx+tzz);
-  res.coeffRef(1,2) = tyz-twx;
-  res.coeffRef(2,0) = txz-twy;
-  res.coeffRef(2,1) = tyz+twx;
-  res.coeffRef(2,2) = Scalar(1)-(txx+tyy);
-
-  return res;
-}
-#endif
-
 void Quaternion_To_Matrix(QuaternionTypeDef *q, MatrixRotationTypeDef m) {
-#if 0
-  float xx = q->x * q->x;
-  float xy = q->x * q->y;
-  float xz = q->x * q->z;
-  float xw = q->x * q->w;
-
-  float yy = q->y * q->y;
-  float yz = q->y * q->z;
-  float yw = q->y * q->w;
-
-  float zz = q->z * q->z;
-  float zw = q->z * q->w;
-    
-  m[0][0] = 1.0f - 2.0f * (yy + zz);
-  m[0][1] = 2.0f * (xy - zw);
-  m[0][2] = 2.0f * (xz + yw);
-
-  m[1][0] = 2.0f * (xy + zw);
-  m[1][1] = 1.0f - 2.0f * (xx + zz);
-  m[1][2] = 2.0f * (yz - xw);
-
-  m[2][0] = 2.0f * (xz - yw);
-  m[2][1] = 2.0f * (yz + xw);
-  m[2][2] = 1.0f - 2.0f * (xx + yy);
-#else
   float tx  = 2.0f * q->x;
   float ty  = 2.0f * q->y;
   float tz  = 2.0f * q->z;
@@ -134,23 +74,13 @@ void Quaternion_To_Matrix(QuaternionTypeDef *q, MatrixRotationTypeDef m) {
   m[2][0] = txz - twy;
   m[2][1] = tyz + twx;
   m[2][2] = 1.0f - (txx + tyy);
-#endif
 }
-
-#if 0
-    (
-      a.w() * b.w() - a.x() * b.x() - a.y() * b.y() - a.z() * b.z(),
-      a.w() * b.x() + a.x() * b.w() + a.y() * b.z() - a.z() * b.y(),
-      a.w() * b.y() + a.y() * b.w() + a.z() * b.x() - a.x() * b.z(),
-      a.w() * b.z() + a.z() * b.w() + a.x() * b.y() - a.y() * b.x()
-    );
-#endif
 
 void Quaternion_Multiply(QuaternionTypeDef *q1, QuaternionTypeDef *q2, QuaternionTypeDef *out) {
   out->w = q1->w * q2->w - q1->x * q2->x - q1->y * q2->y - q1->z * q2->z;
   out->x = q1->w * q2->x + q1->x * q2->w + q1->y * q2->z - q1->z * q2->y;
-  out->y = q1->w * q2->y - q1->x * q2->z + q1->y * q2->w + q1->z * q1->x;
-	out->z = q1->w * q2->z + q1->x * q2->y - q1->y * q2->x + q1->z * q1->w;
+  out->y = q1->w * q2->y + q1->y * q2->w + q1->z * q2->x - q1->x * q2->z;
+  out->z = q1->w * q2->z + q1->z * q2->w + q1->x * q2->y - q1->y * q2->x;
 }
 
 void Quaternion_Normalize(QuaternionTypeDef *q) {
@@ -163,29 +93,25 @@ void Quaternion_Normalize(QuaternionTypeDef *q) {
 }
 
 void Quaternion_To_Euler(QuaternionTypeDef *q, Vector3fTypeDef *euler) {
-    // Extract the values from Quaternion
-    float qw = q->w;
-    float qx = q->x;
-    float qy = q->y;
-    float qz = q->z;
-    
-    // Roll (x-axis rotation)
-    float sinr_cosp = 2.0f * (qw * qx + qy * qz);
-    float cosr_cosp = 1.0f - 2.0f * (qx * qx + qy * qy);
-    euler->x = atan2(sinr_cosp, cosr_cosp);
+  float qw = q->w;
+  float qx = q->x;
+  float qy = q->y;
+  float qz = q->z;
 
-    // Pitch (y-axis rotation)
-    float sinp = 2.0f * (qw * qy - qz * qx);
-    if (fabs(sinp) >= 1.0f) {
-        euler->y = copysign(3.14f / 2.0f, sinp); // Use 90 degrees if out of range
-    } else {
-        euler->y = asin(sinp);
-    }
+  float sinr_cosp = 2.0f * (qw * qx + qy * qz);
+  float cosr_cosp = 1.0f - 2.0f * (qx * qx + qy * qy);
+  euler->x = atan2(sinr_cosp, cosr_cosp);
 
-    // Yaw (z-axis rotation)
-    float siny_cosp = 2.0f * (qw * qz + qx * qy);
-    float cosy_cosp = 1.0f - 2.0f * (qy * qy + qz * qz);
-    euler->z = atan2(siny_cosp, cosy_cosp);
+  float sinp = 2.0f * (qw * qy - qz * qx);
+  if (fabs(sinp) >= 1.0f) {
+    euler->y = copysign(3.14f / 2.0f, sinp);
+  } else {
+    euler->y = asin(sinp);
+  }
+
+  float siny_cosp = 2.0f * (qw * qz + qx * qy);
+  float cosy_cosp = 1.0f - 2.0f * (qy * qy + qz * qz);
+  euler->z = atan2(siny_cosp, cosy_cosp);
 }
 
 void Quaternion_Identity(QuaternionTypeDef *q) {

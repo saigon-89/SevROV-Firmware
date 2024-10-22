@@ -28,8 +28,8 @@ HAL_StatusTypeDef MINIMU9_Read_Gyro(MINIMU9_HandleTypeDef *hminimu9) {
 
 HAL_StatusTypeDef MINIMU9_Read_Mag(MINIMU9_HandleTypeDef *hminimu9) {
 	LIS3MDL_Read_Mag(hminimu9->hlis3mdl);
-	Vector3dTypeDef mag_min = { -2300, -4500, -2500 }; // from file
-	Vector3dTypeDef mag_max = { 3500, 600, 2700 }; // from file
+	Vector3dTypeDef mag_min = { -1000, -1000, -1000 }; // from file
+	Vector3dTypeDef mag_max = { 1000, 1000, 1000 }; // from file
 	hminimu9->Mag.x = (float)(hminimu9->hlis3mdl->Mag.x - mag_min.x) / (mag_max.x - mag_min.x) * 2 - 1;
   hminimu9->Mag.y = (float)(hminimu9->hlis3mdl->Mag.y - mag_min.y) / (mag_max.y - mag_min.y) * 2 - 1;
   hminimu9->Mag.z = (float)(hminimu9->hlis3mdl->Mag.z - mag_min.z) / (mag_max.z - mag_min.z) * 2 - 1;
