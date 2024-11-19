@@ -1,7 +1,7 @@
 #include "matrix.h"
 
 #include <math.h>
-#include <stdio.h>
+#include <stddef.h>
 
 void Vector3f_Normalize(Vector3fTypeDef *a) {
   float mag = sqrt(Vector3f_Dot(a, a));
@@ -23,6 +23,19 @@ void Vector3f_Cross(Vector3fTypeDef *a, Vector3fTypeDef *b,
   out->x = (a->y * b->z) - (a->z * b->y);
   out->y = (a->z * b->x) - (a->x * b->z);
   out->z = (a->x * b->y) - (a->y * b->x);
+}
+
+void Vector3f_Add(Vector3fTypeDef *a, Vector3fTypeDef *b,
+                  Vector3fTypeDef *out) {
+  out->x = a->x + b->x;
+  out->y = a->y + b->y;
+  out->z = a->z + b->z;
+}
+									
+void Vector3f_Scale(Vector3fTypeDef *a, float scale, Vector3fTypeDef *out) {
+  out->x = a->x * scale;
+	out->y = a->y * scale;
+	out->z = a->z * scale;
 }
 
 float Vector3d_Max(Vector3dTypeDef *a) {
@@ -119,4 +132,23 @@ void Quaternion_Identity(QuaternionTypeDef *q) {
 	q->y = 0.0f;
 	q->z = 0.0f;
 	q->w = 1.0f;
+}
+
+void Matrix3f_Addition(MatrixRotationTypeDef a, MatrixRotationTypeDef b) {
+  for (size_t i = 0; i < 3; i++) {
+	  for (size_t j = 0; j < 3; j++) {
+		  a[i][j] += b[i][j];
+		}
+	}
+}
+
+void Matrix3f_Multiply(MatrixRotationTypeDef a, MatrixRotationTypeDef b, MatrixRotationTypeDef out) {
+  for (size_t i = 0; i < 3; i++) {
+    for (size_t j = 0; j < 3; j++) {
+      out[i][j] = 0.0f;
+      for (size_t k = 0; k < 3; k++) {
+        out[i][j] += a[i][k] * b[k][j];
+      } 
+    }
+  }
 }

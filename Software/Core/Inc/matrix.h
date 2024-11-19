@@ -35,8 +35,16 @@ void Vector3f_Normalize(Vector3fTypeDef *a);
 
 float Vector3f_Norm(Vector3fTypeDef *a);
 
+void Vector3f_Add(Vector3fTypeDef *a, Vector3fTypeDef *b, Vector3fTypeDef *out);
+
+void Vector3f_Scale(Vector3fTypeDef *a, float scale, Vector3fTypeDef *out);
+
 float Vector3d_Max(Vector3dTypeDef *a);
 
 float Vector3d_Min(Vector3dTypeDef *a);
+
+void Matrix3f_Addition(MatrixRotationTypeDef a, MatrixRotationTypeDef b);
+
+void Matrix3f_Multiply(MatrixRotationTypeDef a, MatrixRotationTypeDef b, MatrixRotationTypeDef out);
 
 #endif

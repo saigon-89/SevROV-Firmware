@@ -3,36 +3,49 @@
 #include <math.h>
 #include <stdio.h>
 
-HAL_StatusTypeDef MINIMU9_Init(MINIMU9_HandleTypeDef *hminimu9, LSM6_HandleTypeDef *hlsm6, LIS3MDL_HandleTypeDef *hlis3mdl) {
+HAL_StatusTypeDef MINIMU9_Init(MINIMU9_HandleTypeDef *hminimu9, LSM6_HandleTypeDef *hlsm6, LIS3MDL_HandleTypeDef *hlis3mdl, float dt) {
 	hminimu9->hlsm6 = hlsm6;
 	hminimu9->hlis3mdl = hlis3mdl;
+	hminimu9->dt = dt;
+	hminimu9->time = 0.0f;
 	Quaternion_Identity(&hminimu9->Rotation);
+
+	LSM6_Enable_Default(hminimu9->hlsm6);
+	LSM6_Measure_Offsets(hminimu9->hlsm6);
+	LIS3MDL_Enable_Default(hminimu9->hlis3mdl);
+
   return HAL_OK;
 }
 
 HAL_StatusTypeDef MINIMU9_Read_Accel(MINIMU9_HandleTypeDef *hminimu9) {
-	LSM6_Read_Acc(hminimu9->hlsm6);
-	hminimu9->Accel.x = hminimu9->hlsm6->Accel.x * 0.000244;
-	hminimu9->Accel.y = hminimu9->hlsm6->Accel.y * 0.000244;
-	hminimu9->Accel.z = hminimu9->hlsm6->Accel.z * 0.000244;
+	LSM6_Read_RawAccel(hminimu9->hlsm6);
+
+	hminimu9->Accel.x = hminimu9->hlsm6->RawAccel.x * 0.000244;
+	hminimu9->Accel.y = hminimu9->hlsm6->RawAccel.y * 0.000244;
+	hminimu9->Accel.z = hminimu9->hlsm6->RawAccel.z * 0.000244;
+
 	return HAL_OK;
 }
 
 HAL_StatusTypeDef MINIMU9_Read_Gyro(MINIMU9_HandleTypeDef *hminimu9) {
-	LSM6_Read_Gyro(hminimu9->hlsm6);
-	hminimu9->Gyro.x = (hminimu9->hlsm6->Gyro.x - hminimu9->hlsm6->GyroOffset.x) * (0.07 * 3.14159265 / 180);
-	hminimu9->Gyro.y = (hminimu9->hlsm6->Gyro.y - hminimu9->hlsm6->GyroOffset.y) * (0.07 * 3.14159265 / 180);
-	hminimu9->Gyro.z = (hminimu9->hlsm6->Gyro.z - hminimu9->hlsm6->GyroOffset.z) * (0.07 * 3.14159265 / 180);
+	LSM6_Read_RawGyro(hminimu9->hlsm6);
+
+	hminimu9->Gyro.x = (hminimu9->hlsm6->RawGyro.x - hminimu9->hlsm6->RawGyroOffset.x) * (0.07 * 3.14159265 / 180);
+	hminimu9->Gyro.y = (hminimu9->hlsm6->RawGyro.y - hminimu9->hlsm6->RawGyroOffset.y) * (0.07 * 3.14159265 / 180);
+	hminimu9->Gyro.z = (hminimu9->hlsm6->RawGyro.z - hminimu9->hlsm6->RawGyroOffset.z) * (0.07 * 3.14159265 / 180);
+
 	return HAL_OK;
 }
 
 HAL_StatusTypeDef MINIMU9_Read_Mag(MINIMU9_HandleTypeDef *hminimu9) {
-	LIS3MDL_Read_Mag(hminimu9->hlis3mdl);
-	Vector3dTypeDef mag_min = { -1000, -1000, -1000 }; // from file
-	Vector3dTypeDef mag_max = { 1000, 1000, 1000 }; // from file
-	hminimu9->Mag.x = (float)(hminimu9->hlis3mdl->Mag.x - mag_min.x) / (mag_max.x - mag_min.x) * 2 - 1;
-  hminimu9->Mag.y = (float)(hminimu9->hlis3mdl->Mag.y - mag_min.y) / (mag_max.y - mag_min.y) * 2 - 1;
-  hminimu9->Mag.z = (float)(hminimu9->hlis3mdl->Mag.z - mag_min.z) / (mag_max.z - mag_min.z) * 2 - 1;
+	LIS3MDL_Read_RawMag(hminimu9->hlis3mdl);
+	Vector3dTypeDef mag_min = { -4670, -2584, -3220 };
+	Vector3dTypeDef mag_max = { 893, 3959, 2702 };
+
+	hminimu9->Mag.x = (float)(hminimu9->hlis3mdl->RawMag.x - mag_min.x) / (mag_max.x - mag_min.x) * 2 - 1;
+  hminimu9->Mag.y = (float)(hminimu9->hlis3mdl->RawMag.y - mag_min.y) / (mag_max.y - mag_min.y) * 2 - 1;
+  hminimu9->Mag.z = (float)(hminimu9->hlis3mdl->RawMag.z - mag_min.z) / (mag_max.z - mag_min.z) * 2 - 1;
+
 	return HAL_OK;
 }
 
@@ -50,7 +63,7 @@ static void Rotation_From_Compass(Vector3fTypeDef *a, Vector3fTypeDef *mfield, M
 	Rot[0][0] = north.x;
 	Rot[0][1] = north.y;
 	Rot[0][2] = north.z;
-	
+
 	Rot[1][0] = east.x;
 	Rot[1][1] = east.y;
 	Rot[1][2] = east.z;
@@ -77,15 +90,28 @@ static void Rotate(QuaternionTypeDef *q, Vector3fTypeDef *om, float dt) {
   Quaternion_Normalize(q);
 }
 
-void MINIMU9_Fusion(MINIMU9_HandleTypeDef *hminimu9, float dt,
-	                  Vector3fTypeDef *om, Vector3fTypeDef *a, Vector3fTypeDef *mfield) {
+void MINIMU9_Fusion(MINIMU9_HandleTypeDef *hminimu9) {
+	float time = HAL_GetTick() / 1000.0f;
+	float dt = time - hminimu9->time;
+
+	if (dt < hminimu9->dt) return;
+	hminimu9->time = time;
+
+	MINIMU9_Read_Accel(hminimu9);
+	MINIMU9_Read_Gyro(hminimu9);
+	MINIMU9_Read_Mag(hminimu9);
+
+	Vector3fTypeDef a = hminimu9->Accel;
+	Vector3fTypeDef om = hminimu9->Gyro;
+	Vector3fTypeDef mfield = hminimu9->Mag;
+
   Vector3fTypeDef Correction = { 0.0f, 0.0f, 0.0f };
 
-  if (fabs(Vector3f_Norm(a) - 1.0f) <= 0.3f) {
+  if (fabs(Vector3f_Norm(&a) - 1.0f) <= 0.3f) {
     float CorrectionStrength = 1.0f;
 
 		MatrixRotationTypeDef RotCompass = { 0 };
-		Rotation_From_Compass(a, mfield, RotCompass);
+		Rotation_From_Compass(&a, &mfield, RotCompass);
 		MatrixRotationTypeDef Rot = { 0 };
 		Quaternion_To_Matrix(&hminimu9->Rotation, Rot);
 
@@ -115,9 +141,9 @@ void MINIMU9_Fusion(MINIMU9_HandleTypeDef *hminimu9, float dt,
   }
 
 	Vector3fTypeDef CorrectedOm = {
-		om->x + Correction.x,
-		om->y + Correction.y,
-		om->z + Correction.z
+		om.x + Correction.x,
+		om.y + Correction.y,
+		om.z + Correction.z
 	};
   Rotate(&hminimu9->Rotation, &CorrectedOm, dt);
 	Quaternion_To_Euler(&hminimu9->Rotation, &hminimu9->Euler);

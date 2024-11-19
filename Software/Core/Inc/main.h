@@ -59,6 +59,14 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define Cur1_Pin GPIO_PIN_0
+#define Cur1_GPIO_Port GPIOC
+#define Cur2_Pin GPIO_PIN_1
+#define Cur2_GPIO_Port GPIOC
+#define Measure_24V_Pin GPIO_PIN_2
+#define Measure_24V_GPIO_Port GPIOC
+#define Cur_Drv1_Pin GPIO_PIN_3
+#define Cur_Drv1_GPIO_Port GPIOC
 #define Dir1_Pin GPIO_PIN_0
 #define Dir1_GPIO_Port GPIOA
 #define PWM1_Pin GPIO_PIN_1
@@ -75,6 +83,10 @@ void Error_Handler(void);
 #define MISO_GPIO_Port GPIOA
 #define MOSI_Pin GPIO_PIN_7
 #define MOSI_GPIO_Port GPIOA
+#define Cur_Drv2_Pin GPIO_PIN_4
+#define Cur_Drv2_GPIO_Port GPIOC
+#define Cur_Drv3_Pin GPIO_PIN_5
+#define Cur_Drv3_GPIO_Port GPIOC
 #define SCL_Pin GPIO_PIN_10
 #define SCL_GPIO_Port GPIOB
 #define SDA_Pin GPIO_PIN_11
@@ -101,6 +113,10 @@ void Error_Handler(void);
 #define RX_GPIO_Port GPIOC
 #define En__Pin GPIO_PIN_2
 #define En__GPIO_Port GPIOD
+#define MODEM_12V_EN_Pin GPIO_PIN_4
+#define MODEM_12V_EN_GPIO_Port GPIOB
+#define RPI_5V_EN_Pin GPIO_PIN_5
+#define RPI_5V_EN_GPIO_Port GPIOB
 #define SCLB6_Pin GPIO_PIN_6
 #define SCLB6_GPIO_Port GPIOB
 #define SDAB7_Pin GPIO_PIN_7
