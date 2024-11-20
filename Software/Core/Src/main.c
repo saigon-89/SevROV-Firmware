@@ -104,22 +104,22 @@ typedef struct __attribute__((packed)) {
 	float CurrentLightRight;
 	float Voltage24V;
 
-#ifdef HYBRID_ROV_MODE
 	struct __attribute__((packed)) {
     float Ia;
 	  float Ib;
 	  float Ic;
   } MotTelemetry[6];
 
+#ifdef HYBRID_ROV_MODE
 	struct __attribute__((packed)) {
     float Ia;
 	  float Ib;
 	  float Voltage;
 		float q;
   } ManTelemetry[3];
-	uint8_t Padding[18];
+	uint8_t Padding[6];
 #else
-	uint8_t Padding[126];
+	uint8_t Padding[54];
 #endif
 
   uint8_t MagicEnd;
@@ -151,10 +151,12 @@ typedef struct __attribute__((packed)) {
 #define SPI_TELEMETRY_PACKAGE_MOTx_PHASE_A_FLAG(x) (1 << (8 + x))
 #define SPI_TELEMETRY_PACKAGE_MOTx_PHASE_B_FLAG(x) (1 << (14 + x))
 #define SPI_TELEMETRY_PACKAGE_MOTx_PHASE_C_FLAG(x) (1 << (20 + x))
+
+#ifdef HYBRID_ROV_MODE
 #define SPI_TELEMETRY_PACKAGE_MAN_UNITx_VOLTAGE_FLAG(x) (1 << (26 + x))
 #define SPI_TELEMETRY_PACKAGE_MAN_UNITx_PHASES_A_B_FLAG(x) (1 << (29 + x))
 #define SPI_TELEMETRY_PACKAGE_MAN_UNITx_ANGLE_FLAG(x) (1 << (32 + x))
-
+#endif
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -190,10 +192,10 @@ UWManipulator_HandleTypeDef huwman;
 
 static SPI_ControlPackageTypeDef spi_rx_buf = { 0 };
 static SPI_TelemetryPackageTypeDef spi_tx_buf = { 0 };
-static bool spiTxRxCpltStatus = false;
+static bool spiTxRxCpltStatus = true;
 
 static uint16_t adcData[ADC_CHANNELS_NUM];
-static bool adcConvCpltStatus = false;
+static bool adcConvCpltStatus = true;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -240,8 +242,10 @@ HAL_StatusTypeDef PACKAGE_GetDesMotCtrl(SPI_ControlPackageTypeDef *package, floa
 HAL_StatusTypeDef PACKAGE_GetDesCamServo(SPI_ControlPackageTypeDef *package, float *servo);
 HAL_StatusTypeDef PACKAGE_GetDesLED(SPI_ControlPackageTypeDef *package, float led[2]);
 
+#ifdef HYBRID_ROV_MODE
 HAL_StatusTypeDef PACKAGE_GetDesManQ(SPI_ControlPackageTypeDef *package, uint8_t unit, float *q);
 HAL_StatusTypeDef PACKAGE_GetDesManGripState(SPI_ControlPackageTypeDef *package, uint8_t *state);
+#endif
 
 HAL_StatusTypeDef PACKAGE_SetIMUEuler(SPI_TelemetryPackageTypeDef *package, float euler[3]);
 HAL_StatusTypeDef PACKAGE_SetIMUAccel(SPI_TelemetryPackageTypeDef *package, float accel[3]);
@@ -252,17 +256,21 @@ HAL_StatusTypeDef PACKAGE_SetCurrentLightLeft(SPI_TelemetryPackageTypeDef *packa
 HAL_StatusTypeDef PACKAGE_SetCurrentLightRight(SPI_TelemetryPackageTypeDef *package, float current);
 HAL_StatusTypeDef PACKAGE_SetVoltage24V(SPI_TelemetryPackageTypeDef *package, float voltage);
 
+#ifdef HYBRID_ROV_MODE
 HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseA(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current);
 HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseB(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current);
 HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseC(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current);
 HAL_StatusTypeDef PACKAGE_SetManVoltage(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float voltage);
 HAL_StatusTypeDef PACKAGE_SetManCurrents(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current[2]);
 HAL_StatusTypeDef PACKAGE_SetManQ(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float q);
+#endif
 
 HAL_StatusTypeDef PACKAGE_TelemetryPackageInit(SPI_TelemetryPackageTypeDef *package);
 
+#ifdef HYBRID_ROV_MODE
 static HAL_StatusTypeDef UWManipulator_SetRPM(UWManipulator_HandleTypeDef *huwman, uint8_t unit, float rpm);
 static HAL_StatusTypeDef UWManipulator_SetStep(UWManipulator_HandleTypeDef *huwman, uint8_t unit, float step);
+#endif
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -383,6 +391,7 @@ HAL_StatusTypeDef PACKAGE_GetDesLED(SPI_ControlPackageTypeDef *package, float le
   return HAL_ERROR;
 }
 
+#ifdef HYBRID_ROV_MODE
 HAL_StatusTypeDef PACKAGE_GetDesManQ(SPI_ControlPackageTypeDef *package, uint8_t unit, float *q) {
   if (package->Flags & SPI_CONTROL_PACKAGE_DES_MAN_Qx_FLAG(unit)) {
 		*q = package->DesManQ[unit];
@@ -400,6 +409,7 @@ HAL_StatusTypeDef PACKAGE_GetDesManGripState(SPI_ControlPackageTypeDef *package,
   }
   return HAL_ERROR;
 }
+#endif
 
 HAL_StatusTypeDef PACKAGE_SetIMUEuler(SPI_TelemetryPackageTypeDef *package, float euler[3]) {
 	for (size_t idx = 0; idx < 3; idx++) {
@@ -475,6 +485,7 @@ HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseC(SPI_TelemetryPackageTypeDef *packa
   return HAL_OK;
 }
 
+#ifdef HYBRID_ROV_MODE
 HAL_StatusTypeDef PACKAGE_SetManVoltage(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float voltage) {
 	package->ManTelemetry[unit].Voltage = voltage;
   package->Flags |= SPI_TELEMETRY_PACKAGE_MAN_UNITx_VOLTAGE_FLAG(unit);
@@ -493,6 +504,7 @@ HAL_StatusTypeDef PACKAGE_SetManAngle(SPI_TelemetryPackageTypeDef *package, uint
   package->Flags |= SPI_TELEMETRY_PACKAGE_MAN_UNITx_ANGLE_FLAG(unit);
   return HAL_OK;
 }
+#endif
 
 HAL_StatusTypeDef PACKAGE_TelemetryPackageInit(SPI_TelemetryPackageTypeDef *package) {
   if (package == NULL) return HAL_ERROR;
@@ -528,6 +540,7 @@ static HAL_StatusTypeDef FOC_MOTx_SetRPM(uint8_t idx, float rpm) {
 	return HAL_OK;
 }
 
+#ifdef HYBRID_ROV_MODE
 HAL_StatusTypeDef UWManipulator_UpdateTelemetryID18x(UWManipulator_HandleTypeDef *huwman,
                                                      uint8_t *data, uint8_t unit) {
   if (data != NULL) {
@@ -638,6 +651,7 @@ static HAL_StatusTypeDef UWManipulator_SetGripState(UWManipulator_HandleTypeDef 
 
   return HAL_OK;
 }
+#endif
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   if (hspi->Instance == SPI1) {
@@ -652,6 +666,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 	
   HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &msgHeader, msgData);
 
+#ifdef HYBRID_ROV_MODE
 	for (size_t unit = 0; unit < UWMANIPULATOR_UNITS; unit++) {
 	  if (msgHeader.StdId == (0x181 + unit)) {
 	    UWManipulator_UpdateTelemetryID18x(&huwman, msgData, unit);
@@ -676,7 +691,8 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 		  return;
 	  }
 	}
-	
+#endif
+
 	for (size_t idx = 0; idx < 6; idx++) {
 		if (msgHeader.StdId == (0x481 + idx)) {
 			float phase_current = 0;
@@ -784,7 +800,10 @@ int main(void)
 	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
-	
+
+  spiTxRxCpltStatus = true;
+	adcConvCpltStatus = true;
+
 	for (uint8_t idx = 0; idx < 6; idx++) {
     PWM_MOTx_SetServo(idx, 0);
   }
