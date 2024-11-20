@@ -3606,9 +3606,9 @@
       <ActiveTab>0</ActiveTab>
       <Doc>
         <Name>../Core/Src/main.c</Name>
-        <ColumnNumber>0</ColumnNumber>
-        <TopLine>81</TopLine>
-        <CurrentLine>112</CurrentLine>
+        <ColumnNumber>3</ColumnNumber>
+        <TopLine>689</TopLine>
+        <CurrentLine>715</CurrentLine>
         <Folding>1</Folding>
         <ContractedFolders></ContractedFolders>
         <PaneID>0</PaneID>
@@ -3641,7 +3641,7 @@
         <PaneID>0</PaneID>
       </Doc>
       <Doc>
-        <Name>../Drivers/CMSIS/Device/ST/STM32F1xx/Include/stm32f1xx.h</Name>
+        <Name>C:\Users\saigon\Documents\GitHub\SevROV-STM32-Control\Software\Drivers\CMSIS\Device\ST\STM32F1xx\Include\stm32f1xx.h</Name>
         <ColumnNumber>0</ColumnNumber>
         <TopLine>168</TopLine>
         <CurrentLine>185</CurrentLine>
@@ -3677,7 +3677,7 @@
         <PaneID>0</PaneID>
       </Doc>
       <Doc>
-        <Name>../Core/Inc/lsm6ds33.h</Name>
+        <Name>C:\Users\saigon\Documents\GitHub\SevROV-STM32-Control\Software\Core\Inc\lsm6ds33.h</Name>
         <ColumnNumber>18</ColumnNumber>
         <TopLine>19</TopLine>
         <CurrentLine>80</CurrentLine>
@@ -3695,7 +3695,7 @@
         <PaneID>0</PaneID>
       </Doc>
       <Doc>
-        <Name>../Core/Inc/lis3mdl.h</Name>
+        <Name>C:\Users\saigon\Documents\GitHub\SevROV-STM32-Control\Software\Core\Inc\lis3mdl.h</Name>
         <ColumnNumber>24</ColumnNumber>
         <TopLine>1</TopLine>
         <CurrentLine>33</CurrentLine>
@@ -3740,7 +3740,7 @@
         <PaneID>0</PaneID>
       </Doc>
       <Doc>
-        <Name>../Core/Inc/minimu9.h</Name>
+        <Name>C:\Users\saigon\Documents\GitHub\SevROV-STM32-Control\Software\Core\Inc\minimu9.h</Name>
         <ColumnNumber>0</ColumnNumber>
         <TopLine>1</TopLine>
         <CurrentLine>32</CurrentLine>
@@ -3749,7 +3749,7 @@
         <PaneID>0</PaneID>
       </Doc>
       <Doc>
-        <Name>../Core/Inc/matrix.h</Name>
+        <Name>C:\Users\saigon\Documents\GitHub\SevROV-STM32-Control\Software\Core\Inc\matrix.h</Name>
         <ColumnNumber>17</ColumnNumber>
         <TopLine>1</TopLine>
         <CurrentLine>38</CurrentLine>
@@ -3785,7 +3785,7 @@
         <PaneID>0</PaneID>
       </Doc>
       <Doc>
-        <Name>../Core/Inc/main.h</Name>
+        <Name>C:\Users\saigon\Documents\GitHub\SevROV-STM32-Control\Software\Core\Inc\main.h</Name>
         <ColumnNumber>2</ColumnNumber>
         <TopLine>57</TopLine>
         <CurrentLine>106</CurrentLine>
@@ -3803,7 +3803,7 @@
         <PaneID>0</PaneID>
       </Doc>
       <Doc>
-        <Name>../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_can.h</Name>
+        <Name>C:\Users\saigon\Documents\GitHub\SevROV-STM32-Control\Software\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_can.h</Name>
         <ColumnNumber>0</ColumnNumber>
         <TopLine>419</TopLine>
         <CurrentLine>440</CurrentLine>
@@ -3821,7 +3821,7 @@
         <PaneID>0</PaneID>
       </Doc>
       <Doc>
-        <Name>../Drivers/STM32F1xx_HAL_Driver/Inc/stm32f1xx_hal_i2c.h</Name>
+        <Name>C:\Users\saigon\Documents\GitHub\SevROV-STM32-Control\Software\Drivers\STM32F1xx_HAL_Driver\Inc\stm32f1xx_hal_i2c.h</Name>
         <ColumnNumber>35</ColumnNumber>
         <TopLine>518</TopLine>
         <CurrentLine>567</CurrentLine>

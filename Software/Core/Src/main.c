@@ -801,9 +801,6 @@ int main(void)
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
 	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 
-  spiTxRxCpltStatus = true;
-	adcConvCpltStatus = true;
-
 	for (uint8_t idx = 0; idx < 6; idx++) {
     PWM_MOTx_SetServo(idx, 0);
   }
