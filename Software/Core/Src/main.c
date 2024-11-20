@@ -172,6 +172,8 @@ I2C_HandleTypeDef hi2c1;
 I2C_HandleTypeDef hi2c2;
 
 SPI_HandleTypeDef hspi1;
+DMA_HandleTypeDef hdma_spi1_tx;
+DMA_HandleTypeDef hdma_spi1_rx;
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
@@ -188,6 +190,7 @@ UWManipulator_HandleTypeDef huwman;
 
 static SPI_ControlPackageTypeDef spi_rx_buf = { 0 };
 static SPI_TelemetryPackageTypeDef spi_tx_buf = { 0 };
+static bool spiTxRxCpltStatus = false;
 
 static uint16_t adcData[ADC_CHANNELS_NUM];
 static bool adcConvCpltStatus = false;
@@ -636,6 +639,13 @@ static HAL_StatusTypeDef UWManipulator_SetGripState(UWManipulator_HandleTypeDef 
   return HAL_OK;
 }
 
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
+  if (hspi->Instance == SPI1) {
+    spi_tx_buf.Flags = 0;
+    spiTxRxCpltStatus = true;
+  }
+}
+
 void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
   CAN_RxHeaderTypeDef msgHeader;
   uint8_t msgData[8];
@@ -826,46 +836,48 @@ int main(void)
 		PACKAGE_SetIMUMagnet(&spi_tx_buf, magnet);
 
 #if 1
-		HAL_SPI_TransmitReceive(&hspi1, (uint8_t *)&spi_tx_buf, (uint8_t *)&spi_rx_buf, SPI_BUFFER_SIZE, HAL_MAX_DELAY);
-		spi_tx_buf.Flags = 0;
-		if (PACKAGE_ControlPackageCheck(&spi_rx_buf) == HAL_OK) {
-		  float mot_ctrl[6];
-			float cam_servo;
-			float led[2];
-			if (PACKAGE_GetDesMotCtrl(&spi_rx_buf, mot_ctrl) == HAL_OK) {
-				for (uint8_t idx = 0; idx < 6; idx++) {
+    if (spiTxRxCpltStatus) {
+      HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t *)&spi_tx_buf, (uint8_t *)&spi_rx_buf, SPI_BUFFER_SIZE);
+      if (PACKAGE_ControlPackageCheck(&spi_rx_buf) == HAL_OK) {
+        float mot_ctrl[6];
+        float cam_servo;
+        float led[2];
+        if (PACKAGE_GetDesMotCtrl(&spi_rx_buf, mot_ctrl) == HAL_OK) {
+          for (uint8_t idx = 0; idx < 6; idx++) {
 #ifndef FOC_DRIVERS_MODE
-					PWM_MOTx_SetServo(idx, mot_ctrl[idx]);
+            PWM_MOTx_SetServo(idx, mot_ctrl[idx]);
 #else
-					FOC_MOTx_SetRPM(idx, mot_ctrl[idx]);
+            FOC_MOTx_SetRPM(idx, mot_ctrl[idx]);
 #endif
-				}
-			}
+          }
+        }
 
 #ifdef HYBRID_ROV_MODE
-			for (uint8_t unit = 0; unit < UWMANIPULATOR_UNITS; unit++) {
-				float angle = 0.0f;
-			  if (PACKAGE_GetDesManQ(&spi_rx_buf, unit, &angle) == HAL_OK) {
-					UWManipulator_SetPosition(&huwman, unit, angle);
-				}
-			}
+        for (uint8_t unit = 0; unit < UWMANIPULATOR_UNITS; unit++) {
+          float angle = 0.0f;
+          if (PACKAGE_GetDesManQ(&spi_rx_buf, unit, &angle) == HAL_OK) {
+            UWManipulator_SetPosition(&huwman, unit, angle);
+          }
+        }
 
-			uint8_t state = 0;
-			if (PACKAGE_GetDesManGripState(&spi_rx_buf, &state) == HAL_OK) {
-				UWManipulator_SetGripState(&huwman, state);
-			}
+        uint8_t state = 0;
+        if (PACKAGE_GetDesManGripState(&spi_rx_buf, &state) == HAL_OK) {
+          UWManipulator_SetGripState(&huwman, state);
+        }
 #endif
 
-			if (PACKAGE_GetDesCamServo(&spi_rx_buf, &cam_servo) == HAL_OK) {
-				//printf("CAM_SERVO: %.2f\r\n", cam_servo);
-			}
+        if (PACKAGE_GetDesCamServo(&spi_rx_buf, &cam_servo) == HAL_OK) {
+          //printf("CAM_SERVO: %.2f\r\n", cam_servo);
+        }
 
-			if (PACKAGE_GetDesLED(&spi_rx_buf, led) == HAL_OK) {
-				for (uint8_t idx = 0; idx < 2; idx++) {
-					//printf("LED[%d]: %.2f\r\n", idx, led[idx]);
-				}
-			}
-		}
+        if (PACKAGE_GetDesLED(&spi_rx_buf, led) == HAL_OK) {
+          for (uint8_t idx = 0; idx < 2; idx++) {
+            //printf("LED[%d]: %.2f\r\n", idx, led[idx]);
+          }
+        }
+      }
+      spiTxRxCpltStatus = false;
+    }
 #endif
 
 #if 0
@@ -1511,6 +1523,12 @@ static void MX_DMA_Init(void)
   /* DMA1_Channel1_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+  /* DMA1_Channel2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel2_IRQn);
+  /* DMA1_Channel3_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel3_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel3_IRQn);
 
 }
 
@@ -1568,7 +1586,7 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 int stdout_putchar(int ch)
 {
-	HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, 0xFFFF);
+	HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
 	return ch;
 }
 /* USER CODE END 4 */
