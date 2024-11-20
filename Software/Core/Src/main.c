@@ -190,8 +190,8 @@ LIS3MDL_HandleTypeDef hlis3mdl;
 MINIMU9_HandleTypeDef hminimu9;
 UWManipulator_HandleTypeDef huwman;
 
-static SPI_ControlPackageTypeDef spi_rx_buf = { 0 };
-static SPI_TelemetryPackageTypeDef spi_tx_buf = { 0 };
+static SPI_ControlPackageTypeDef spiRxData = { 0 };
+static SPI_TelemetryPackageTypeDef spiTxData = { 0 };
 static bool spiTxRxCpltStatus = true;
 
 static uint16_t adcData[ADC_CHANNELS_NUM];
@@ -655,7 +655,7 @@ static HAL_StatusTypeDef UWManipulator_SetGripState(UWManipulator_HandleTypeDef 
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
   if (hspi->Instance == SPI1) {
-    spi_tx_buf.Flags = 0;
+    spiTxData.Flags = 0;
     spiTxRxCpltStatus = true;
   }
 }
@@ -671,13 +671,13 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 	  if (msgHeader.StdId == (0x181 + unit)) {
 	    UWManipulator_UpdateTelemetryID18x(&huwman, msgData, unit);
 			float voltage = huwman.id18x_data[unit].voltage_dc;
-			PACKAGE_SetManVoltage(&spi_tx_buf, unit, voltage);
+			PACKAGE_SetManVoltage(&spiTxData, unit, voltage);
 		  return;
 	  }
 
 	  if (msgHeader.StdId == (0x281 + unit)) {
 	    UWManipulator_UpdateTelemetryID28x(&huwman, msgData, unit);
-			PACKAGE_SetManAngle(&spi_tx_buf, unit, huwman.q[unit]);
+			PACKAGE_SetManAngle(&spiTxData, unit, huwman.q[unit]);
 	  	return;
 	  }
 
@@ -687,7 +687,7 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 				huwman.id38x_data[unit].phase_a_current,
 				huwman.id38x_data[unit].phase_b_current
 			};
-			PACKAGE_SetManCurrents(&spi_tx_buf, unit, currents);
+			PACKAGE_SetManCurrents(&spiTxData, unit, currents);
 		  return;
 	  }
 	}
@@ -697,19 +697,19 @@ void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
 		if (msgHeader.StdId == (0x481 + idx)) {
 			float phase_current = 0;
 			memcpy(&phase_current, msgData, sizeof(float));
-			PACKAGE_SetMotCurrentPhaseA(&spi_tx_buf, idx, phase_current);
+			PACKAGE_SetMotCurrentPhaseA(&spiTxData, idx, phase_current);
 			return;
 		}
 		if (msgHeader.StdId == (0x581 + idx)) {
 			float phase_current = 0;
 			memcpy(&phase_current, msgData, sizeof(float));
-			PACKAGE_SetMotCurrentPhaseB(&spi_tx_buf, idx, phase_current);
+			PACKAGE_SetMotCurrentPhaseB(&spiTxData, idx, phase_current);
 			return;
 		}
 		if (msgHeader.StdId == (0x681 + idx)) {
 			float phase_current = 0;
 			memcpy(&phase_current, msgData, sizeof(float));
-			PACKAGE_SetMotCurrentPhaseC(&spi_tx_buf, idx, phase_current);
+			PACKAGE_SetMotCurrentPhaseC(&spiTxData, idx, phase_current);
 			return;
 		}
 	}
@@ -729,11 +729,11 @@ void TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan) {
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
   if (hadc->Instance == ADC1) {
-    PACKAGE_SetCurrentLightLeft(&spi_tx_buf, (float)adcData[0]);
-    PACKAGE_SetCurrentLightRight(&spi_tx_buf, (float)adcData[1]);
+    PACKAGE_SetCurrentLightLeft(&spiTxData, (float)adcData[0]);
+    PACKAGE_SetCurrentLightRight(&spiTxData, (float)adcData[1]);
     float voltage = 4.1956e-06 * (float)adcData[2] * (float)adcData[2] - 0.0057 * (float)adcData[2] + 12.9609;
-		PACKAGE_SetVoltage24V(&spi_tx_buf, voltage);
-		PACKAGE_SetCurrentGeneral(&spi_tx_buf, (float)adcData[3]);
+		PACKAGE_SetVoltage24V(&spiTxData, voltage);
+		PACKAGE_SetCurrentGeneral(&spiTxData, (float)adcData[3]);
     adcConvCpltStatus = true;
   }
 }
@@ -747,7 +747,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	PACKAGE_TelemetryPackageInit(&spi_tx_buf);
+	PACKAGE_TelemetryPackageInit(&spiTxData);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -846,19 +846,19 @@ int main(void)
 			hminimu9.Mag.z
 		};
 
-		PACKAGE_SetIMUEuler(&spi_tx_buf, euler);
-		PACKAGE_SetIMUAccel(&spi_tx_buf, accel);
-		PACKAGE_SetIMUGyro(&spi_tx_buf, gyro);
-		PACKAGE_SetIMUMagnet(&spi_tx_buf, magnet);
+		PACKAGE_SetIMUEuler(&spiTxData, euler);
+		PACKAGE_SetIMUAccel(&spiTxData, accel);
+		PACKAGE_SetIMUGyro(&spiTxData, gyro);
+		PACKAGE_SetIMUMagnet(&spiTxData, magnet);
 
 #if 1
     if (spiTxRxCpltStatus) {
-      HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t *)&spi_tx_buf, (uint8_t *)&spi_rx_buf, SPI_BUFFER_SIZE);
-      if (PACKAGE_ControlPackageCheck(&spi_rx_buf) == HAL_OK) {
+      HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t *)&spiTxData, (uint8_t *)&spiRxData, SPI_BUFFER_SIZE);
+      if (PACKAGE_ControlPackageCheck(&spiRxData) == HAL_OK) {
         float mot_ctrl[6];
         float cam_servo;
         float led[2];
-        if (PACKAGE_GetDesMotCtrl(&spi_rx_buf, mot_ctrl) == HAL_OK) {
+        if (PACKAGE_GetDesMotCtrl(&spiRxData, mot_ctrl) == HAL_OK) {
           for (uint8_t idx = 0; idx < 6; idx++) {
 #ifndef FOC_DRIVERS_MODE
             PWM_MOTx_SetServo(idx, mot_ctrl[idx]);
@@ -871,22 +871,22 @@ int main(void)
 #ifdef HYBRID_ROV_MODE
         for (uint8_t unit = 0; unit < UWMANIPULATOR_UNITS; unit++) {
           float angle = 0.0f;
-          if (PACKAGE_GetDesManQ(&spi_rx_buf, unit, &angle) == HAL_OK) {
+          if (PACKAGE_GetDesManQ(&spiRxData, unit, &angle) == HAL_OK) {
             UWManipulator_SetPosition(&huwman, unit, angle);
           }
         }
 
         uint8_t state = 0;
-        if (PACKAGE_GetDesManGripState(&spi_rx_buf, &state) == HAL_OK) {
+        if (PACKAGE_GetDesManGripState(&spiRxData, &state) == HAL_OK) {
           UWManipulator_SetGripState(&huwman, state);
         }
 #endif
 
-        if (PACKAGE_GetDesCamServo(&spi_rx_buf, &cam_servo) == HAL_OK) {
+        if (PACKAGE_GetDesCamServo(&spiRxData, &cam_servo) == HAL_OK) {
           //printf("CAM_SERVO: %.2f\r\n", cam_servo);
         }
 
-        if (PACKAGE_GetDesLED(&spi_rx_buf, led) == HAL_OK) {
+        if (PACKAGE_GetDesLED(&spiRxData, led) == HAL_OK) {
           for (uint8_t idx = 0; idx < 2; idx++) {
             //printf("LED[%d]: %.2f\r\n", idx, led[idx]);
           }
