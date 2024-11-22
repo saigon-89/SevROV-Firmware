@@ -31,34 +31,34 @@ void Vector3f_Add(Vector3fTypeDef *a, Vector3fTypeDef *b,
   out->y = a->y + b->y;
   out->z = a->z + b->z;
 }
-									
+                  
 void Vector3f_Scale(Vector3fTypeDef *a, float scale, Vector3fTypeDef *out) {
   out->x = a->x * scale;
-	out->y = a->y * scale;
-	out->z = a->z * scale;
+  out->y = a->y * scale;
+  out->z = a->z * scale;
 }
 
 float Vector3d_Max(Vector3dTypeDef *a) {
-	float max = a->x;
+  float max = a->x;
 
-	if (a->y > max) {
-		max = a->y;
+  if (a->y > max) {
+    max = a->y;
   }
-	if (a->z > max) {
-		max = a->z;
+  if (a->z > max) {
+    max = a->z;
   }
 
   return max;
 }
 
 float Vector3d_Min(Vector3dTypeDef *a) {
-	float min = a->x;
+  float min = a->x;
 
-	if (a->y < min) {
-		min = a->y;
+  if (a->y < min) {
+    min = a->y;
   }
-	if (a->z < min) {
-		min = a->z;
+  if (a->z < min) {
+    min = a->z;
   }
 
   return min;
@@ -129,17 +129,17 @@ void Quaternion_To_Euler(QuaternionTypeDef *q, Vector3fTypeDef *euler) {
 
 void Quaternion_Identity(QuaternionTypeDef *q) {
   q->x = 0.0f;
-	q->y = 0.0f;
-	q->z = 0.0f;
-	q->w = 1.0f;
+  q->y = 0.0f;
+  q->z = 0.0f;
+  q->w = 1.0f;
 }
 
 void Matrix3f_Addition(MatrixRotationTypeDef a, MatrixRotationTypeDef b) {
   for (size_t i = 0; i < 3; i++) {
-	  for (size_t j = 0; j < 3; j++) {
-		  a[i][j] += b[i][j];
-		}
-	}
+    for (size_t j = 0; j < 3; j++) {
+      a[i][j] += b[i][j];
+    }
+  }
 }
 
 void Matrix3f_Multiply(MatrixRotationTypeDef a, MatrixRotationTypeDef b, MatrixRotationTypeDef out) {

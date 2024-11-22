@@ -62,7 +62,7 @@ typedef struct {
   uint8_t Address;
   Vector3dTypeDef RawAccel;
   Vector3dTypeDef RawGyro;
-	Vector3dTypeDef RawGyroOffset;
+  Vector3dTypeDef RawGyroOffset;
 } LSM6_HandleTypeDef;
 
 HAL_StatusTypeDef LSM6_Init(LSM6_HandleTypeDef *hlsm6, I2C_HandleTypeDef *hi2c);

@@ -8,15 +8,15 @@
 
 typedef struct {
   LSM6_HandleTypeDef *hlsm6;
-	LIS3MDL_HandleTypeDef *hlis3mdl;
-	Vector3fTypeDef Accel;
-	Vector3fTypeDef Gyro;
-	Vector3fTypeDef Mag;
-	Vector3fTypeDef Euler;
-	QuaternionTypeDef Rotation;
+  LIS3MDL_HandleTypeDef *hlis3mdl;
+  Vector3fTypeDef Accel;
+  Vector3fTypeDef Gyro;
+  Vector3fTypeDef Mag;
+  Vector3fTypeDef Euler;
+  QuaternionTypeDef Rotation;
 
-	float dt;
-	float time;
+  float dt;
+  float time;
 } MINIMU9_HandleTypeDef;
 
 HAL_StatusTypeDef MINIMU9_Init(MINIMU9_HandleTypeDef *hminimu9, LSM6_HandleTypeDef *hlsm6, LIS3MDL_HandleTypeDef *hlis3mdl, float dt);

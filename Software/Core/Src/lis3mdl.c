@@ -11,17 +11,17 @@
 static HAL_StatusTypeDef LIS3MDL_Test_Reg(LIS3MDL_HandleTypeDef *hlis3mdl,
                                           uint16_t Address, uint8_t Reg,
                                           uint8_t *Out) {
-	return HAL_I2C_Mem_Read(hlis3mdl->hi2c, Address, Reg, sizeof(uint8_t),
+  return HAL_I2C_Mem_Read(hlis3mdl->hi2c, Address, Reg, sizeof(uint8_t),
                           Out, sizeof(uint8_t), 10);
 }
 
 HAL_StatusTypeDef LIS3MDL_Init(LIS3MDL_HandleTypeDef *hlis3mdl, I2C_HandleTypeDef *hi2c) {
   uint8_t Reg = 0;
-	HAL_StatusTypeDef Status = HAL_OK;
+  HAL_StatusTypeDef Status = HAL_OK;
 
-	hlis3mdl->hi2c = hi2c;
+  hlis3mdl->hi2c = hi2c;
 
-	Status = LIS3MDL_Test_Reg(hlis3mdl, LIS3MDL_SA1_HIGH_ADDRESS, LIS3MDL_WHO_AM_I, &Reg);
+  Status = LIS3MDL_Test_Reg(hlis3mdl, LIS3MDL_SA1_HIGH_ADDRESS, LIS3MDL_WHO_AM_I, &Reg);
   if (Status == HAL_OK) {
     if (Reg == LIS3MDL_WHO_ID) {
       hlis3mdl->Address = LIS3MDL_SA1_HIGH_ADDRESS;
@@ -29,7 +29,7 @@ HAL_StatusTypeDef LIS3MDL_Init(LIS3MDL_HandleTypeDef *hlis3mdl, I2C_HandleTypeDe
     }
   }
 
-	Status = LIS3MDL_Test_Reg(hlis3mdl, LIS3MDL_SA1_LOW_ADDRESS, LIS3MDL_WHO_AM_I, &Reg);
+  Status = LIS3MDL_Test_Reg(hlis3mdl, LIS3MDL_SA1_LOW_ADDRESS, LIS3MDL_WHO_AM_I, &Reg);
   if (Status == HAL_OK) {
     if (Reg == LIS3MDL_WHO_ID) {
       hlis3mdl->Address = LIS3MDL_SA1_LOW_ADDRESS;
@@ -48,14 +48,14 @@ void LIS3MDL_Enable_Default(LIS3MDL_HandleTypeDef *hlis3mdl) {
 }
 
 void LIS3MDL_Write_Reg(LIS3MDL_HandleTypeDef *hlis3mdl, uint8_t Reg, uint8_t Value) {
-	hlis3mdl->Status = HAL_I2C_Mem_Write(hlis3mdl->hi2c, hlis3mdl->Address, Reg, sizeof(uint8_t),
+  hlis3mdl->Status = HAL_I2C_Mem_Write(hlis3mdl->hi2c, hlis3mdl->Address, Reg, sizeof(uint8_t),
                                        &Value, sizeof(uint8_t), 1);
 }
 
 uint8_t LIS3MDL_Read_Reg(LIS3MDL_HandleTypeDef *hlis3mdl, uint8_t Reg) {
   uint8_t Value;
 
-	hlis3mdl->Status = HAL_I2C_Mem_Read(hlis3mdl->hi2c, hlis3mdl->Address, Reg, sizeof(uint8_t),
+  hlis3mdl->Status = HAL_I2C_Mem_Read(hlis3mdl->hi2c, hlis3mdl->Address, Reg, sizeof(uint8_t),
                                       &Value, sizeof(Value), 1);
 
   return Value;
@@ -64,8 +64,8 @@ uint8_t LIS3MDL_Read_Reg(LIS3MDL_HandleTypeDef *hlis3mdl, uint8_t Reg) {
 void LIS3MDL_Read_RawMag(LIS3MDL_HandleTypeDef *hlis3mdl) {
   uint8_t Data[6] = {0};
 
-	hlis3mdl->Status = HAL_I2C_Mem_Read(hlis3mdl->hi2c, hlis3mdl->Address, (0x80 | LIS3MDL_OUT_X_L),
-	                                    sizeof(uint8_t), Data, sizeof(Data), 1);
+  hlis3mdl->Status = HAL_I2C_Mem_Read(hlis3mdl->hi2c, hlis3mdl->Address, (0x80 | LIS3MDL_OUT_X_L),
+                                      sizeof(uint8_t), Data, sizeof(Data), 1);
 
   uint8_t xlm = Data[0];
   uint8_t xhm = Data[1];

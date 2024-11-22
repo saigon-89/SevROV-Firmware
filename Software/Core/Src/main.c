@@ -48,78 +48,87 @@
 
 #define UWMANIPULATOR_UNITS 3
 
-typedef enum {
+typedef enum
+{
   UWMANIPULATOR_GRIP_OPEN = 0,
-	UWMANIPULATOR_GRIP_CLOSE = 1,
-	UWMANIPULATOR_GRIP_STOP = 2,
+  UWMANIPULATOR_GRIP_CLOSE = 1,
+  UWMANIPULATOR_GRIP_STOP = 2,
 } UWManipulator_GripStateTypeDef;
 
-typedef struct {
-  struct {
+typedef struct
+{
+  struct
+  {
     uint16_t fault_bits;
     float voltage_dc;
     float electrical_freq;
   } id18x_data[UWMANIPULATOR_UNITS];
-  struct {
+  struct
+  {
     float electrical_position;
     float workzone_counts;
   } id28x_data[UWMANIPULATOR_UNITS];
-  struct {
+  struct
+  {
     float phase_a_current;
     float phase_b_current;
   } id38x_data[UWMANIPULATOR_UNITS];
-	float q[UWMANIPULATOR_UNITS];
+  float q[UWMANIPULATOR_UNITS];
   UWManipulator_GripStateTypeDef grip_state;
 } UWManipulator_HandleTypeDef;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
   uint8_t MagicStart;
   uint64_t Flags;
 
   float DesMotServo[6];
   float DesCamServo;
-	float DesLED[2];
+  float DesLED[2];
 
 #ifdef HYBRID_ROV_MODE
-	float DesManQ[3];
-	uint8_t DesManGripState;
-	uint8_t Padding[141];
+  float DesManQ[3];
+  uint8_t DesManGripState;
+  uint8_t Padding[141];
 #else
-	uint8_t Padding[154];
+  uint8_t Padding[154];
 #endif
 
   uint8_t MagicEnd;
 } SPI_ControlPackageTypeDef;
 
-typedef struct __attribute__((packed)) {
+typedef struct __attribute__((packed))
+{
   uint8_t MagicStart;
   uint64_t Flags;
 
   float IMUEuler[3];
-	float IMUAccel[3];
-	float IMUGyro[3];
-	float IMUMagnet[3];
+  float IMUAccel[3];
+  float IMUGyro[3];
+  float IMUMagnet[3];
   float CurrentGeneral;
-	float CurrentLightLeft;
-	float CurrentLightRight;
-	float Voltage24V;
+  float CurrentLightLeft;
+  float CurrentLightRight;
+  float Voltage24V;
 
-	struct __attribute__((packed)) {
+  struct __attribute__((packed))
+  {
     float Ia;
-	  float Ib;
-	  float Ic;
+    float Ib;
+    float Ic;
   } MotTelemetry[6];
 
 #ifdef HYBRID_ROV_MODE
-	struct __attribute__((packed)) {
+  struct __attribute__((packed))
+  {
     float Ia;
-	  float Ib;
-	  float Voltage;
-		float q;
+    float Ib;
+    float Voltage;
+    float q;
   } ManTelemetry[3];
-	uint8_t Padding[6];
+  uint8_t Padding[6];
 #else
-	uint8_t Padding[54];
+  uint8_t Padding[54];
 #endif
 
   uint8_t MagicEnd;
@@ -190,8 +199,8 @@ LIS3MDL_HandleTypeDef hlis3mdl;
 MINIMU9_HandleTypeDef hminimu9;
 UWManipulator_HandleTypeDef huwman;
 
-static SPI_ControlPackageTypeDef spiRxData = { 0 };
-static SPI_TelemetryPackageTypeDef spiTxData = { 0 };
+static SPI_ControlPackageTypeDef spiRxData = {0};
+static SPI_TelemetryPackageTypeDef spiTxData = {0};
 static bool spiTxRxCpltStatus = true;
 
 static uint16_t adcData[ADC_CHANNELS_NUM];
@@ -238,141 +247,199 @@ void PWM_LED_SetDutyCycle(float duty);
 
 void PWM_SERVO_SetServo(float load);
 
-HAL_StatusTypeDef PACKAGE_GetDesMotCtrl(SPI_ControlPackageTypeDef *package, float servo[6]);
-HAL_StatusTypeDef PACKAGE_GetDesCamServo(SPI_ControlPackageTypeDef *package, float *servo);
-HAL_StatusTypeDef PACKAGE_GetDesLED(SPI_ControlPackageTypeDef *package, float led[2]);
+HAL_StatusTypeDef PACKAGE_GetDesMotCtrl(SPI_ControlPackageTypeDef *package,
+                                        float servo[6]);
+HAL_StatusTypeDef PACKAGE_GetDesCamServo(SPI_ControlPackageTypeDef *package,
+                                         float *servo);
+HAL_StatusTypeDef PACKAGE_GetDesLED(SPI_ControlPackageTypeDef *package,
+                                    float led[2]);
 
 #ifdef HYBRID_ROV_MODE
-HAL_StatusTypeDef PACKAGE_GetDesManQ(SPI_ControlPackageTypeDef *package, uint8_t unit, float *q);
-HAL_StatusTypeDef PACKAGE_GetDesManGripState(SPI_ControlPackageTypeDef *package, uint8_t *state);
+HAL_StatusTypeDef PACKAGE_GetDesManQ(SPI_ControlPackageTypeDef *package,
+                                     uint8_t unit, float *q);
+HAL_StatusTypeDef PACKAGE_GetDesManGripState(SPI_ControlPackageTypeDef *package,
+                                             uint8_t *state);
 #endif
 
-HAL_StatusTypeDef PACKAGE_SetIMUEuler(SPI_TelemetryPackageTypeDef *package, float euler[3]);
-HAL_StatusTypeDef PACKAGE_SetIMUAccel(SPI_TelemetryPackageTypeDef *package, float accel[3]);
-HAL_StatusTypeDef PACKAGE_SetIMUGyro(SPI_TelemetryPackageTypeDef *package, float gyro[3]);
-HAL_StatusTypeDef PACKAGE_SetIMUMagnet(SPI_TelemetryPackageTypeDef *package, float magnet[3]);
-HAL_StatusTypeDef PACKAGE_SetCurrentGeneral(SPI_TelemetryPackageTypeDef *package, float current);
-HAL_StatusTypeDef PACKAGE_SetCurrentLightLeft(SPI_TelemetryPackageTypeDef *package, float current);
-HAL_StatusTypeDef PACKAGE_SetCurrentLightRight(SPI_TelemetryPackageTypeDef *package, float current);
-HAL_StatusTypeDef PACKAGE_SetVoltage24V(SPI_TelemetryPackageTypeDef *package, float voltage);
+HAL_StatusTypeDef PACKAGE_SetIMUEuler(SPI_TelemetryPackageTypeDef *package,
+                                      float euler[3]);
+HAL_StatusTypeDef PACKAGE_SetIMUAccel(SPI_TelemetryPackageTypeDef *package,
+                                      float accel[3]);
+HAL_StatusTypeDef PACKAGE_SetIMUGyro(SPI_TelemetryPackageTypeDef *package,
+                                     float gyro[3]);
+HAL_StatusTypeDef PACKAGE_SetIMUMagnet(SPI_TelemetryPackageTypeDef *package,
+                                       float magnet[3]);
+HAL_StatusTypeDef PACKAGE_SetCurrentGeneral(SPI_TelemetryPackageTypeDef *package,
+                                            float current);
+HAL_StatusTypeDef PACKAGE_SetCurrentLightLeft(
+    SPI_TelemetryPackageTypeDef *package, float current);
+HAL_StatusTypeDef PACKAGE_SetCurrentLightRight(
+    SPI_TelemetryPackageTypeDef *package, float current);
+HAL_StatusTypeDef PACKAGE_SetVoltage24V(SPI_TelemetryPackageTypeDef *package,
+                                        float voltage);
 
 #ifdef HYBRID_ROV_MODE
-HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseA(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current);
-HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseB(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current);
-HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseC(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current);
-HAL_StatusTypeDef PACKAGE_SetManVoltage(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float voltage);
-HAL_StatusTypeDef PACKAGE_SetManCurrents(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current[2]);
-HAL_StatusTypeDef PACKAGE_SetManQ(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float q);
+HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseA(
+    SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current);
+HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseB(
+    SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current);
+HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseC(
+    SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current);
+HAL_StatusTypeDef PACKAGE_SetManVoltage(SPI_TelemetryPackageTypeDef *package,
+                                        uint8_t unit, float voltage);
+HAL_StatusTypeDef PACKAGE_SetManCurrents(SPI_TelemetryPackageTypeDef *package,
+                                         uint8_t unit, float current[2]);
+HAL_StatusTypeDef PACKAGE_SetManQ(SPI_TelemetryPackageTypeDef *package,
+                                  uint8_t unit, float q);
 #endif
 
-HAL_StatusTypeDef PACKAGE_TelemetryPackageInit(SPI_TelemetryPackageTypeDef *package);
+HAL_StatusTypeDef PACKAGE_TelemetryPackageInit(
+    SPI_TelemetryPackageTypeDef *package);
 
 #ifdef HYBRID_ROV_MODE
-static HAL_StatusTypeDef UWManipulator_SetRPM(UWManipulator_HandleTypeDef *huwman, uint8_t unit, float rpm);
-static HAL_StatusTypeDef UWManipulator_SetStep(UWManipulator_HandleTypeDef *huwman, uint8_t unit, float step);
+static HAL_StatusTypeDef UWManipulator_SetRPM(UWManipulator_HandleTypeDef *huwman,
+                                              uint8_t unit, float rpm);
+static HAL_StatusTypeDef UWManipulator_SetStep(
+    UWManipulator_HandleTypeDef *huwman, uint8_t unit, float step);
 #endif
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-static float Clamp(float value, float min, float max) {
+static float Clamp(float value, float min, float max)
+{
   return (value < min) ? min : (value > max) ? max : value;
 }
 
-static uint16_t DutyCycleToCCRx(float duty) {
-	duty = Clamp(duty, 0.0, 100.0);
+static uint16_t DutyCycleToCCRx(float duty)
+{
+  duty = Clamp(duty, 0.0, 100.0);
   return (uint16_t)((float)UINT16_MAX * (duty / 100.0f));
 }
 
-static uint16_t ServoLoadToCCRx(float load) {
-	load = Clamp(load, -100.0, 100.0);
-	float in_min = -100.0;
-	float in_max = 100.0;
-	float out_min = 5.0;
-	float out_max = 10.0;
-	float duty = (load - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+static uint16_t ServoLoadToCCRx(float load)
+{
+  load = Clamp(load, -100.0, 100.0);
+  float in_min = -100.0;
+  float in_max = 100.0;
+  float out_min = 5.0;
+  float out_max = 10.0;
+  float duty =
+      (load - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
   return DutyCycleToCCRx(duty);
 }
 
-void PWM_MOT1_SetServo(float load) {
+void PWM_MOT1_SetServo(float load)
+{
   WRITE_REG(TIM1->CCR3, ServoLoadToCCRx(load));
 }
 
-void PWM_MOT2_SetServo(float load) {
+void PWM_MOT2_SetServo(float load)
+{
   WRITE_REG(TIM1->CCR2, ServoLoadToCCRx(load));
 }
 
-void PWM_MOT3_SetServo(float load) {
+void PWM_MOT3_SetServo(float load)
+{
   WRITE_REG(TIM1->CCR1, ServoLoadToCCRx(load));
 }
 
-void PWM_MAN1_SetDutyCycle(float duty) {
-	WRITE_REG(TIM2->CCR2, DutyCycleToCCRx(duty));
+void PWM_MAN1_SetDutyCycle(float duty)
+{
+  WRITE_REG(TIM2->CCR2, DutyCycleToCCRx(duty));
 }
 
-void PWM_MAN2_SetDutyCycle(float duty) {
-	WRITE_REG(TIM2->CCR3, DutyCycleToCCRx(duty));
+void PWM_MAN2_SetDutyCycle(float duty)
+{
+  WRITE_REG(TIM2->CCR3, DutyCycleToCCRx(duty));
 }
 
-void PWM_MOT8_SetServo(float load) {
+void PWM_MOT8_SetServo(float load)
+{
   WRITE_REG(TIM2->CCR4, ServoLoadToCCRx(load));
 }
 
-void PWM_MOT4_SetServo(float load) {
+void PWM_MOT4_SetServo(float load)
+{
   WRITE_REG(TIM3->CCR4, ServoLoadToCCRx(load));
 }
 
-void PWM_MOT5_SetServo(float load) {
+void PWM_MOT5_SetServo(float load)
+{
   WRITE_REG(TIM3->CCR3, ServoLoadToCCRx(load));
 }
 
-void PWM_MOT6_SetServo(float load) {
+void PWM_MOT6_SetServo(float load)
+{
   WRITE_REG(TIM3->CCR2, ServoLoadToCCRx(load));
 }
 
-void PWM_MOT7_SetServo(float load) {
+void PWM_MOT7_SetServo(float load)
+{
   WRITE_REG(TIM3->CCR1, ServoLoadToCCRx(load));
 }
 
-void PWM_LED_SetDutyCycle(float duty) {
-	WRITE_REG(TIM4->CCR4, DutyCycleToCCRx(duty));
+void PWM_LED_SetDutyCycle(float duty)
+{
+  WRITE_REG(TIM4->CCR4, DutyCycleToCCRx(duty));
 }
 
-void PWM_SERVO_SetServo(float load) {
-	WRITE_REG(TIM4->CCR3, ServoLoadToCCRx(load));
+void PWM_SERVO_SetServo(float load)
+{
+  WRITE_REG(TIM4->CCR3, ServoLoadToCCRx(load));
 }
 
-HAL_StatusTypeDef PWM_MOTx_SetServo(uint8_t idx, float load) {
-  if (idx >= 6) return HAL_ERROR;
-	if (idx == 0) {
-	  PWM_MOT3_SetServo(load);
-	} else if (idx == 1) {
-		PWM_MOT4_SetServo(load);
-	} else if (idx == 2) {
-		PWM_MOT5_SetServo(load);
-	} else if (idx == 3) {
-		PWM_MOT6_SetServo(load);
-	} else if (idx == 4) {
-		PWM_MOT7_SetServo(load);
-	} else if (idx == 5) {
-		PWM_MOT8_SetServo(load);
-	}
-	return HAL_OK;
+HAL_StatusTypeDef PWM_MOTx_SetServo(uint8_t idx, float load)
+{
+  if (idx >= 6)
+    return HAL_ERROR;
+  if (idx == 0)
+  {
+    PWM_MOT3_SetServo(load);
+  }
+  else if (idx == 1)
+  {
+    PWM_MOT4_SetServo(load);
+  }
+  else if (idx == 2)
+  {
+    PWM_MOT5_SetServo(load);
+  }
+  else if (idx == 3)
+  {
+    PWM_MOT6_SetServo(load);
+  }
+  else if (idx == 4)
+  {
+    PWM_MOT7_SetServo(load);
+  }
+  else if (idx == 5)
+  {
+    PWM_MOT8_SetServo(load);
+  }
+  return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_GetDesMotCtrl(SPI_ControlPackageTypeDef *package, float servo[6]) {
-  if (package->Flags & SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG) {
-		for (size_t idx = 0; idx < 6; idx++) {
-			servo[idx] = package->DesMotServo[idx];
-		}
+HAL_StatusTypeDef PACKAGE_GetDesMotCtrl(SPI_ControlPackageTypeDef *package,
+                                        float servo[6])
+{
+  if (package->Flags & SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG)
+  {
+    for (size_t idx = 0; idx < 6; idx++)
+    {
+      servo[idx] = package->DesMotServo[idx];
+    }
     package->Flags &= ~SPI_CONTROL_PACKAGE_DES_MOT_SERVOx_FLAG;
     return HAL_OK;
   }
   return HAL_ERROR;
 }
 
-HAL_StatusTypeDef PACKAGE_GetDesCamServo(SPI_ControlPackageTypeDef *package, float *servo) {
-  if (package->Flags & SPI_CONTROL_PACKAGE_DES_CAM_SERVO_FLAG) {
+HAL_StatusTypeDef PACKAGE_GetDesCamServo(SPI_ControlPackageTypeDef *package,
+                                         float *servo)
+{
+  if (package->Flags & SPI_CONTROL_PACKAGE_DES_CAM_SERVO_FLAG)
+  {
     *servo = package->DesCamServo;
     package->Flags &= ~SPI_CONTROL_PACKAGE_DES_CAM_SERVO_FLAG;
     return HAL_OK;
@@ -380,11 +447,15 @@ HAL_StatusTypeDef PACKAGE_GetDesCamServo(SPI_ControlPackageTypeDef *package, flo
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_GetDesLED(SPI_ControlPackageTypeDef *package, float led[2]) {
-  if (package->Flags & SPI_CONTROL_PACKAGE_DES_LED_FLAG) {
-		for (size_t idx = 0; idx < 2; idx++) {
-			led[idx] = package->DesLED[idx];
-		}
+HAL_StatusTypeDef PACKAGE_GetDesLED(SPI_ControlPackageTypeDef *package,
+                                    float led[2])
+{
+  if (package->Flags & SPI_CONTROL_PACKAGE_DES_LED_FLAG)
+  {
+    for (size_t idx = 0; idx < 2; idx++)
+    {
+      led[idx] = package->DesLED[idx];
+    }
     package->Flags &= ~SPI_CONTROL_PACKAGE_DES_LED_FLAG;
     return HAL_OK;
   }
@@ -392,18 +463,24 @@ HAL_StatusTypeDef PACKAGE_GetDesLED(SPI_ControlPackageTypeDef *package, float le
 }
 
 #ifdef HYBRID_ROV_MODE
-HAL_StatusTypeDef PACKAGE_GetDesManQ(SPI_ControlPackageTypeDef *package, uint8_t unit, float *q) {
-  if (package->Flags & SPI_CONTROL_PACKAGE_DES_MAN_Qx_FLAG(unit)) {
-		*q = package->DesManQ[unit];
+HAL_StatusTypeDef PACKAGE_GetDesManQ(SPI_ControlPackageTypeDef *package,
+                                     uint8_t unit, float *q)
+{
+  if (package->Flags & SPI_CONTROL_PACKAGE_DES_MAN_Qx_FLAG(unit))
+  {
+    *q = package->DesManQ[unit];
     package->Flags &= ~SPI_CONTROL_PACKAGE_DES_MAN_Qx_FLAG(unit);
     return HAL_OK;
   }
   return HAL_ERROR;
 }
 
-HAL_StatusTypeDef PACKAGE_GetDesManGripState(SPI_ControlPackageTypeDef *package, uint8_t *state) {
-  if (package->Flags & SPI_CONTROL_PACKAGE_DES_MAN_GRIP_FLAG) {
-		*state = package->DesManGripState;
+HAL_StatusTypeDef PACKAGE_GetDesManGripState(SPI_ControlPackageTypeDef *package,
+                                             uint8_t *state)
+{
+  if (package->Flags & SPI_CONTROL_PACKAGE_DES_MAN_GRIP_FLAG)
+  {
+    *state = package->DesManGripState;
     package->Flags &= ~SPI_CONTROL_PACKAGE_DES_MAN_GRIP_FLAG;
     return HAL_OK;
   }
@@ -411,329 +488,413 @@ HAL_StatusTypeDef PACKAGE_GetDesManGripState(SPI_ControlPackageTypeDef *package,
 }
 #endif
 
-HAL_StatusTypeDef PACKAGE_SetIMUEuler(SPI_TelemetryPackageTypeDef *package, float euler[3]) {
-	for (size_t idx = 0; idx < 3; idx++) {
-		package->IMUEuler[idx] = euler[idx];
-	}
+HAL_StatusTypeDef PACKAGE_SetIMUEuler(SPI_TelemetryPackageTypeDef *package,
+                                      float euler[3])
+{
+  for (size_t idx = 0; idx < 3; idx++)
+  {
+    package->IMUEuler[idx] = euler[idx];
+  }
   package->Flags |= SPI_TELEMETRY_PACKAGE_IMU_EULERx_FLAG;
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_SetIMUAccel(SPI_TelemetryPackageTypeDef *package, float accel[3]) {
-	for (size_t idx = 0; idx < 3; idx++) {
-		package->IMUAccel[idx] = accel[idx];
-	}
+HAL_StatusTypeDef PACKAGE_SetIMUAccel(SPI_TelemetryPackageTypeDef *package,
+                                      float accel[3])
+{
+  for (size_t idx = 0; idx < 3; idx++)
+  {
+    package->IMUAccel[idx] = accel[idx];
+  }
   package->Flags |= SPI_TELEMETRY_PACKAGE_IMU_ACCELx_FLAG;
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_SetIMUGyro(SPI_TelemetryPackageTypeDef *package, float gyro[3]) {
-	for (size_t idx = 0; idx < 3; idx++) {
-		package->IMUGyro[idx] = gyro[idx];
-	}
+HAL_StatusTypeDef PACKAGE_SetIMUGyro(SPI_TelemetryPackageTypeDef *package,
+                                     float gyro[3])
+{
+  for (size_t idx = 0; idx < 3; idx++)
+  {
+    package->IMUGyro[idx] = gyro[idx];
+  }
   package->Flags |= SPI_TELEMETRY_PACKAGE_IMU_GYROx_FLAG;
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_SetIMUMagnet(SPI_TelemetryPackageTypeDef *package, float magnet[3]) {
-	for (size_t idx = 0; idx < 3; idx++) {
-		package->IMUMagnet[idx] = magnet[idx];
-	}
+HAL_StatusTypeDef PACKAGE_SetIMUMagnet(SPI_TelemetryPackageTypeDef *package,
+                                       float magnet[3])
+{
+  for (size_t idx = 0; idx < 3; idx++)
+  {
+    package->IMUMagnet[idx] = magnet[idx];
+  }
   package->Flags |= SPI_TELEMETRY_PACKAGE_IMU_MAGNETx_FLAG;
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_SetCurrentGeneral(SPI_TelemetryPackageTypeDef *package, float current) {
-	package->CurrentGeneral = current;
+HAL_StatusTypeDef PACKAGE_SetCurrentGeneral(SPI_TelemetryPackageTypeDef *package,
+                                            float current)
+{
+  package->CurrentGeneral = current;
   package->Flags |= SPI_TELEMETRY_PACKAGE_CURRENT_GENERAL_FLAG;
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_SetCurrentLightLeft(SPI_TelemetryPackageTypeDef *package, float current) {
-	package->CurrentLightLeft = current;
+HAL_StatusTypeDef PACKAGE_SetCurrentLightLeft(
+    SPI_TelemetryPackageTypeDef *package, float current)
+{
+  package->CurrentLightLeft = current;
   package->Flags |= SPI_TELEMETRY_PACKAGE_CURRENT_LIGHT_LEFT_FLAG;
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_SetCurrentLightRight(SPI_TelemetryPackageTypeDef *package, float current) {
-	package->CurrentLightRight = current;
+HAL_StatusTypeDef PACKAGE_SetCurrentLightRight(
+    SPI_TelemetryPackageTypeDef *package, float current)
+{
+  package->CurrentLightRight = current;
   package->Flags |= SPI_TELEMETRY_PACKAGE_CURRENT_LIGHT_RIGHT_FLAG;
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_SetVoltage24V(SPI_TelemetryPackageTypeDef *package, float voltage) {
-	package->Voltage24V = voltage;
+HAL_StatusTypeDef PACKAGE_SetVoltage24V(SPI_TelemetryPackageTypeDef *package,
+                                        float voltage)
+{
+  package->Voltage24V = voltage;
   package->Flags |= SPI_TELEMETRY_PACKAGE_VOLTAGE_24V_FLAG;
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseA(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current) {
-	package->MotTelemetry[unit].Ia = current;
+HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseA(
+    SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current)
+{
+  package->MotTelemetry[unit].Ia = current;
   package->Flags |= SPI_TELEMETRY_PACKAGE_MOTx_PHASE_A_FLAG(unit);
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseB(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current) {
-	package->MotTelemetry[unit].Ib = current;
+HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseB(
+    SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current)
+{
+  package->MotTelemetry[unit].Ib = current;
   package->Flags |= SPI_TELEMETRY_PACKAGE_MOTx_PHASE_B_FLAG(unit);
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseC(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current) {
-	package->MotTelemetry[unit].Ic = current;
+HAL_StatusTypeDef PACKAGE_SetMotCurrentPhaseC(
+    SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current)
+{
+  package->MotTelemetry[unit].Ic = current;
   package->Flags |= SPI_TELEMETRY_PACKAGE_MOTx_PHASE_C_FLAG(unit);
   return HAL_OK;
 }
 
 #ifdef HYBRID_ROV_MODE
-HAL_StatusTypeDef PACKAGE_SetManVoltage(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float voltage) {
-	package->ManTelemetry[unit].Voltage = voltage;
+HAL_StatusTypeDef PACKAGE_SetManVoltage(SPI_TelemetryPackageTypeDef *package,
+                                        uint8_t unit, float voltage)
+{
+  package->ManTelemetry[unit].Voltage = voltage;
   package->Flags |= SPI_TELEMETRY_PACKAGE_MAN_UNITx_VOLTAGE_FLAG(unit);
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_SetManCurrents(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float current[2]) {
-	package->ManTelemetry[unit].Ia = current[0];
-	package->ManTelemetry[unit].Ib = current[1];
+HAL_StatusTypeDef PACKAGE_SetManCurrents(SPI_TelemetryPackageTypeDef *package,
+                                         uint8_t unit, float current[2])
+{
+  package->ManTelemetry[unit].Ia = current[0];
+  package->ManTelemetry[unit].Ib = current[1];
   package->Flags |= SPI_TELEMETRY_PACKAGE_MAN_UNITx_PHASES_A_B_FLAG(unit);
   return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_SetManAngle(SPI_TelemetryPackageTypeDef *package, uint8_t unit, float angle) {
-	package->ManTelemetry[unit].q = angle;
+HAL_StatusTypeDef PACKAGE_SetManAngle(SPI_TelemetryPackageTypeDef *package,
+                                      uint8_t unit, float angle)
+{
+  package->ManTelemetry[unit].q = angle;
   package->Flags |= SPI_TELEMETRY_PACKAGE_MAN_UNITx_ANGLE_FLAG(unit);
   return HAL_OK;
 }
 #endif
 
-HAL_StatusTypeDef PACKAGE_TelemetryPackageInit(SPI_TelemetryPackageTypeDef *package) {
-  if (package == NULL) return HAL_ERROR;
-	package->MagicStart = 0xAB;
-	package->MagicEnd = 0xCD;
-	return HAL_OK;
+HAL_StatusTypeDef PACKAGE_TelemetryPackageInit(
+    SPI_TelemetryPackageTypeDef *package)
+{
+  if (package == NULL)
+    return HAL_ERROR;
+  package->MagicStart = 0xAB;
+  package->MagicEnd = 0xCD;
+  return HAL_OK;
 }
 
-HAL_StatusTypeDef PACKAGE_ControlPackageCheck(SPI_ControlPackageTypeDef *package) {
-  if (package == NULL) return HAL_ERROR;
-	if (package->MagicStart != 0xAB) return HAL_ERROR;
-	if (package->MagicEnd != 0xCD) return HAL_ERROR;
-	return HAL_OK;
+HAL_StatusTypeDef PACKAGE_ControlPackageCheck(SPI_ControlPackageTypeDef *package)
+{
+  if (package == NULL)
+    return HAL_ERROR;
+  if (package->MagicStart != 0xAB)
+    return HAL_ERROR;
+  if (package->MagicEnd != 0xCD)
+    return HAL_ERROR;
+  return HAL_OK;
 }
 
-static HAL_StatusTypeDef FOC_MOTx_SetRPM(uint8_t idx, float rpm) {
-	if (idx >= 6) return HAL_ERROR;
+static HAL_StatusTypeDef FOC_MOTx_SetRPM(uint8_t idx, float rpm)
+{
+  if (idx >= 6)
+    return HAL_ERROR;
 
-	while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0);
-	CAN_TxHeaderTypeDef msgHeader;
-	msgHeader.StdId = 0x521 + idx;
-	msgHeader.DLC = 8;
-	msgHeader.TransmitGlobalTime = DISABLE;
-	msgHeader.RTR = CAN_RTR_DATA;
-	msgHeader.IDE = CAN_ID_STD;
-		
-	uint32_t mailBoxNum = 0;
-	uint8_t msgData[8] = {0};
-	memcpy(msgData, &rpm, sizeof(float));
-		
-	HAL_CAN_AddTxMessage(&hcan, &msgHeader, msgData, &mailBoxNum);
+  while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0)
+    ;
+  CAN_TxHeaderTypeDef msgHeader;
+  msgHeader.StdId = 0x521 + idx;
+  msgHeader.DLC = 8;
+  msgHeader.TransmitGlobalTime = DISABLE;
+  msgHeader.RTR = CAN_RTR_DATA;
+  msgHeader.IDE = CAN_ID_STD;
 
-	return HAL_OK;
+  uint32_t mailBoxNum = 0;
+  uint8_t msgData[8] = {0};
+  memcpy(msgData, &rpm, sizeof(float));
+
+  HAL_CAN_AddTxMessage(&hcan, &msgHeader, msgData, &mailBoxNum);
+
+  return HAL_OK;
 }
 
 #ifdef HYBRID_ROV_MODE
-HAL_StatusTypeDef UWManipulator_UpdateTelemetryID18x(UWManipulator_HandleTypeDef *huwman,
-                                                     uint8_t *data, uint8_t unit) {
-  if (data != NULL) {
-		memcpy(&huwman->id18x_data[unit].fault_bits, &data[0], sizeof(uint16_t));
+HAL_StatusTypeDef UWManipulator_UpdateTelemetryID18x(
+    UWManipulator_HandleTypeDef *huwman, uint8_t *data, uint8_t unit)
+{
+  if (data != NULL)
+  {
+    memcpy(&huwman->id18x_data[unit].fault_bits, &data[0], sizeof(uint16_t));
     int16_t voltage_dc_bits = ((int16_t)data[3] << 8) | data[2];
-    huwman->id18x_data[unit].voltage_dc = (float)(voltage_dc_bits) * (MAX_FLOAT16 / 32767.0f);
+    huwman->id18x_data[unit].voltage_dc =
+        (float)(voltage_dc_bits) * (MAX_FLOAT16 / 32767.0f);
     memcpy(&huwman->id18x_data[unit].electrical_freq, &data[4], sizeof(float));
   }
 
   return HAL_OK;
 }
 
-HAL_StatusTypeDef UWManipulator_UpdateTelemetryID28x(UWManipulator_HandleTypeDef *huwman,
-                                                     uint8_t *data, uint8_t unit) {
-  if (data != NULL) {
-		memcpy(&huwman->id28x_data[unit].electrical_position, &data[0], sizeof(float));
-		memcpy(&huwman->id28x_data[unit].workzone_counts, &data[4], sizeof(float));
-		huwman->q[unit] = 2.0f * 3.14f * huwman->id28x_data[unit].workzone_counts / 131072.0f;
+HAL_StatusTypeDef UWManipulator_UpdateTelemetryID28x(
+    UWManipulator_HandleTypeDef *huwman, uint8_t *data, uint8_t unit)
+{
+  if (data != NULL)
+  {
+    memcpy(&huwman->id28x_data[unit].electrical_position, &data[0],
+           sizeof(float));
+    memcpy(&huwman->id28x_data[unit].workzone_counts, &data[4], sizeof(float));
+    huwman->q[unit] =
+        2.0f * 3.14f * huwman->id28x_data[unit].workzone_counts / 131072.0f;
   }
 
   return HAL_OK;
 }
 
-HAL_StatusTypeDef UWManipulator_UpdateTelemetryID38x(UWManipulator_HandleTypeDef *huwman,
-                                                     uint8_t *data, uint8_t unit) {
-  if (data != NULL) {
-		memcpy(&huwman->id38x_data[unit].phase_a_current, &data[0], sizeof(float));
-		memcpy(&huwman->id38x_data[unit].phase_b_current, &data[4], sizeof(float));
+HAL_StatusTypeDef UWManipulator_UpdateTelemetryID38x(
+    UWManipulator_HandleTypeDef *huwman, uint8_t *data, uint8_t unit)
+{
+  if (data != NULL)
+  {
+    memcpy(&huwman->id38x_data[unit].phase_a_current, &data[0], sizeof(float));
+    memcpy(&huwman->id38x_data[unit].phase_b_current, &data[4], sizeof(float));
   }
 
   return HAL_OK;
 }
-																										 
-static HAL_StatusTypeDef UWManipulator_SetRPM(UWManipulator_HandleTypeDef *huwman, uint8_t unit, float rpm) {
-	if (unit >= 3) return HAL_ERROR;
 
-	while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0);
-	uint8_t msgData[8] = {0};
-	uint32_t mailBoxNum = 0;
-	CAN_TxHeaderTypeDef msgHeader;
-	msgHeader.StdId = UWMANIPULATOR_RPDO_COB_ID | unit | 0x001;
-	msgHeader.DLC = 8;
-	msgHeader.TransmitGlobalTime = DISABLE;
-	msgHeader.RTR = CAN_RTR_DATA;
-	msgHeader.IDE = CAN_ID_STD;
+static HAL_StatusTypeDef UWManipulator_SetRPM(UWManipulator_HandleTypeDef *huwman,
+                                              uint8_t unit, float rpm)
+{
+  if (unit >= 3)
+    return HAL_ERROR;
+
+  while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0)
+    ;
+  uint8_t msgData[8] = {0};
+  uint32_t mailBoxNum = 0;
+  CAN_TxHeaderTypeDef msgHeader;
+  msgHeader.StdId = UWMANIPULATOR_RPDO_COB_ID | unit | 0x001;
+  msgHeader.DLC = 8;
+  msgHeader.TransmitGlobalTime = DISABLE;
+  msgHeader.RTR = CAN_RTR_DATA;
+  msgHeader.IDE = CAN_ID_STD;
 
   msgData[0] = UWMANIPULATOR_CMD_ESC_RPM;
   memcpy(&msgData[4], &rpm, sizeof(float));
 
   HAL_CAN_AddTxMessage(&hcan, &msgHeader, msgData, &mailBoxNum);
 
-	return HAL_OK;
+  return HAL_OK;
 }
 
-static HAL_StatusTypeDef UWManipulator_SetPosition(UWManipulator_HandleTypeDef *huwman, uint8_t unit, float pose) {
-	if (unit >= 3) return HAL_ERROR;
+static HAL_StatusTypeDef UWManipulator_SetPosition(
+    UWManipulator_HandleTypeDef *huwman, uint8_t unit, float pose)
+{
+  if (unit >= 3)
+    return HAL_ERROR;
 
-	while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0);
-	uint8_t msgData[8] = {0};
-	uint32_t mailBoxNum = 0;
-	CAN_TxHeaderTypeDef msgHeader;
-	msgHeader.StdId = UWMANIPULATOR_RPDO_COB_ID | unit | 0x001;
-	msgHeader.DLC = 8;
-	msgHeader.TransmitGlobalTime = DISABLE;
-	msgHeader.RTR = CAN_RTR_DATA;
-	msgHeader.IDE = CAN_ID_STD;
+  while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0)
+    ;
+  uint8_t msgData[8] = {0};
+  uint32_t mailBoxNum = 0;
+  CAN_TxHeaderTypeDef msgHeader;
+  msgHeader.StdId = UWMANIPULATOR_RPDO_COB_ID | unit | 0x001;
+  msgHeader.DLC = 8;
+  msgHeader.TransmitGlobalTime = DISABLE;
+  msgHeader.RTR = CAN_RTR_DATA;
+  msgHeader.IDE = CAN_ID_STD;
 
-	float counts = pose * 131072.0f / (2.0f * 3.14f);
+  float counts = pose * 131072.0f / (2.0f * 3.14f);
   msgData[0] = UWMANIPULATOR_CMD_SERVO;
-	memcpy(&msgData[4], &counts, sizeof(float));
+  memcpy(&msgData[4], &counts, sizeof(float));
 
-	HAL_CAN_AddTxMessage(&hcan, &msgHeader, msgData, &mailBoxNum);
+  HAL_CAN_AddTxMessage(&hcan, &msgHeader, msgData, &mailBoxNum);
 
-	return HAL_OK;
+  return HAL_OK;
 }
 
-static HAL_StatusTypeDef UWManipulator_SetStep(UWManipulator_HandleTypeDef *huwman, uint8_t unit, float step) {
-	if (unit >= 3) return HAL_ERROR;
+static HAL_StatusTypeDef UWManipulator_SetStep(
+    UWManipulator_HandleTypeDef *huwman, uint8_t unit, float step)
+{
+  if (unit >= 3)
+    return HAL_ERROR;
 
-	while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0);
-	uint8_t msgData[8] = {0};
-	uint32_t mailBoxNum = 0;
-	CAN_TxHeaderTypeDef msgHeader;
-	msgHeader.StdId = UWMANIPULATOR_RPDO_COB_ID | unit | 0x001;
-	msgHeader.DLC = 8;
-	msgHeader.TransmitGlobalTime = DISABLE;
-	msgHeader.RTR = CAN_RTR_DATA;
-	msgHeader.IDE = CAN_ID_STD;
+  while (HAL_CAN_GetTxMailboxesFreeLevel(&hcan) == 0)
+    ;
+  uint8_t msgData[8] = {0};
+  uint32_t mailBoxNum = 0;
+  CAN_TxHeaderTypeDef msgHeader;
+  msgHeader.StdId = UWMANIPULATOR_RPDO_COB_ID | unit | 0x001;
+  msgHeader.DLC = 8;
+  msgHeader.TransmitGlobalTime = DISABLE;
+  msgHeader.RTR = CAN_RTR_DATA;
+  msgHeader.IDE = CAN_ID_STD;
 
   msgData[0] = UWMANIPULATOR_CMD_SERVO_STEPPER;
   memcpy(&msgData[4], &step, sizeof(float));
 
-	HAL_CAN_AddTxMessage(&hcan, &msgHeader, msgData, &mailBoxNum);
+  HAL_CAN_AddTxMessage(&hcan, &msgHeader, msgData, &mailBoxNum);
 
-	return HAL_OK;
+  return HAL_OK;
 }
 
-static HAL_StatusTypeDef UWManipulator_SetGripState(UWManipulator_HandleTypeDef *huwman, uint8_t state) {
-	if (state == UWMANIPULATOR_GRIP_OPEN) {
-		PWM_MOT1_SetServo(85.0f);
-	} else if (state == UWMANIPULATOR_GRIP_CLOSE) {
-		PWM_MOT1_SetServo(-85.0f);
-	} else if (state == UWMANIPULATOR_GRIP_STOP) {
-		PWM_MOT1_SetServo(0.0f);
-	} else {
-	  return HAL_ERROR;
-	}
+static HAL_StatusTypeDef UWManipulator_SetGripState(
+    UWManipulator_HandleTypeDef *huwman, uint8_t state)
+{
+  if (state == UWMANIPULATOR_GRIP_OPEN)
+  {
+    PWM_MOT1_SetServo(85.0f);
+  }
+  else if (state == UWMANIPULATOR_GRIP_CLOSE)
+  {
+    PWM_MOT1_SetServo(-85.0f);
+  }
+  else if (state == UWMANIPULATOR_GRIP_STOP)
+  {
+    PWM_MOT1_SetServo(0.0f);
+  }
+  else
+  {
+    return HAL_ERROR;
+  }
 
   return HAL_OK;
 }
 #endif
 
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
-  if (hspi->Instance == SPI1) {
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  if (hspi->Instance == SPI1)
+  {
     spiTxData.Flags = 0;
     spiTxRxCpltStatus = true;
   }
 }
 
-void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan) {
+void HAL_CAN_RxFifo0MsgPendingCallback(CAN_HandleTypeDef *hcan)
+{
   CAN_RxHeaderTypeDef msgHeader;
   uint8_t msgData[8];
-	
+
   HAL_CAN_GetRxMessage(hcan, CAN_RX_FIFO0, &msgHeader, msgData);
 
 #ifdef HYBRID_ROV_MODE
-	for (size_t unit = 0; unit < UWMANIPULATOR_UNITS; unit++) {
-	  if (msgHeader.StdId == (0x181 + unit)) {
-	    UWManipulator_UpdateTelemetryID18x(&huwman, msgData, unit);
-			float voltage = huwman.id18x_data[unit].voltage_dc;
-			PACKAGE_SetManVoltage(&spiTxData, unit, voltage);
-		  return;
-	  }
+  for (size_t unit = 0; unit < UWMANIPULATOR_UNITS; unit++)
+  {
+    if (msgHeader.StdId == (0x181 + unit))
+    {
+      UWManipulator_UpdateTelemetryID18x(&huwman, msgData, unit);
+      float voltage = huwman.id18x_data[unit].voltage_dc;
+      PACKAGE_SetManVoltage(&spiTxData, unit, voltage);
+      return;
+    }
 
-	  if (msgHeader.StdId == (0x281 + unit)) {
-	    UWManipulator_UpdateTelemetryID28x(&huwman, msgData, unit);
-			PACKAGE_SetManAngle(&spiTxData, unit, huwman.q[unit]);
-	  	return;
-	  }
+    if (msgHeader.StdId == (0x281 + unit))
+    {
+      UWManipulator_UpdateTelemetryID28x(&huwman, msgData, unit);
+      PACKAGE_SetManAngle(&spiTxData, unit, huwman.q[unit]);
+      return;
+    }
 
-	  if (msgHeader.StdId == (0x381 + unit)) {
-	    UWManipulator_UpdateTelemetryID38x(&huwman, msgData, unit);
-			float currents[] = {
-				huwman.id38x_data[unit].phase_a_current,
-				huwman.id38x_data[unit].phase_b_current
-			};
-			PACKAGE_SetManCurrents(&spiTxData, unit, currents);
-		  return;
-	  }
-	}
+    if (msgHeader.StdId == (0x381 + unit))
+    {
+      UWManipulator_UpdateTelemetryID38x(&huwman, msgData, unit);
+      float currents[] = {huwman.id38x_data[unit].phase_a_current,
+                          huwman.id38x_data[unit].phase_b_current};
+      PACKAGE_SetManCurrents(&spiTxData, unit, currents);
+      return;
+    }
+  }
 #endif
 
-	for (size_t idx = 0; idx < 6; idx++) {
-		if (msgHeader.StdId == (0x481 + idx)) {
-			float phase_current = 0;
-			memcpy(&phase_current, msgData, sizeof(float));
-			PACKAGE_SetMotCurrentPhaseA(&spiTxData, idx, phase_current);
-			return;
-		}
-		if (msgHeader.StdId == (0x581 + idx)) {
-			float phase_current = 0;
-			memcpy(&phase_current, msgData, sizeof(float));
-			PACKAGE_SetMotCurrentPhaseB(&spiTxData, idx, phase_current);
-			return;
-		}
-		if (msgHeader.StdId == (0x681 + idx)) {
-			float phase_current = 0;
-			memcpy(&phase_current, msgData, sizeof(float));
-			PACKAGE_SetMotCurrentPhaseC(&spiTxData, idx, phase_current);
-			return;
-		}
-	}
+  for (size_t idx = 0; idx < 6; idx++)
+  {
+    if (msgHeader.StdId == (0x481 + idx))
+    {
+      float phase_current = 0;
+      memcpy(&phase_current, msgData, sizeof(float));
+      PACKAGE_SetMotCurrentPhaseA(&spiTxData, idx, phase_current);
+      return;
+    }
+    if (msgHeader.StdId == (0x581 + idx))
+    {
+      float phase_current = 0;
+      memcpy(&phase_current, msgData, sizeof(float));
+      PACKAGE_SetMotCurrentPhaseB(&spiTxData, idx, phase_current);
+      return;
+    }
+    if (msgHeader.StdId == (0x681 + idx))
+    {
+      float phase_current = 0;
+      memcpy(&phase_current, msgData, sizeof(float));
+      PACKAGE_SetMotCurrentPhaseC(&spiTxData, idx, phase_current);
+      return;
+    }
+  }
 }
 
-void TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan) {
-	
+void TxMailbox0CompleteCallback(CAN_HandleTypeDef *hcan)
+{
 }
 
-void TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan) {
-	
+void TxMailbox1CompleteCallback(CAN_HandleTypeDef *hcan)
+{
 }
 
-void TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan) {
-	
+void TxMailbox2CompleteCallback(CAN_HandleTypeDef *hcan)
+{
 }
 
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
-  if (hadc->Instance == ADC1) {
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+  if (hadc->Instance == ADC1)
+  {
     PACKAGE_SetCurrentLightLeft(&spiTxData, (float)adcData[0]);
     PACKAGE_SetCurrentLightRight(&spiTxData, (float)adcData[1]);
-    float voltage = 4.1956e-06 * (float)adcData[2] * (float)adcData[2] - 0.0057 * (float)adcData[2] + 12.9609;
-		PACKAGE_SetVoltage24V(&spiTxData, voltage);
-		PACKAGE_SetCurrentGeneral(&spiTxData, (float)adcData[3]);
+    float voltage = 4.1956e-06 * (float)adcData[2] * (float)adcData[2] -
+                    0.0057 * (float)adcData[2] + 12.9609;
+    PACKAGE_SetVoltage24V(&spiTxData, voltage);
+    PACKAGE_SetCurrentGeneral(&spiTxData, (float)adcData[3]);
     adcConvCpltStatus = true;
   }
 }
@@ -747,7 +908,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	PACKAGE_TelemetryPackageInit(&spiTxData);
+  PACKAGE_TelemetryPackageInit(&spiTxData);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -780,32 +941,33 @@ int main(void)
   MX_CAN_Init();
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
-	HAL_GPIO_WritePin(RPI_5V_EN_GPIO_Port, RPI_5V_EN_Pin, GPIO_PIN_SET);
-	HAL_GPIO_WritePin(MODEM_12V_EN_GPIO_Port, MODEM_12V_EN_Pin, GPIO_PIN_SET);
-	//HAL_Delay(40000);
+  HAL_GPIO_WritePin(RPI_5V_EN_GPIO_Port, RPI_5V_EN_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(MODEM_12V_EN_GPIO_Port, MODEM_12V_EN_Pin, GPIO_PIN_SET);
+  //HAL_Delay(40000);
 
-	LSM6_Init(&hlsm6, &hi2c1);
-	LIS3MDL_Init(&hlis3mdl, &hi2c1);
-	MINIMU9_Init(&hminimu9, &hlsm6, &hlis3mdl, 0.03f);
-	
-	HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+  LSM6_Init(&hlsm6, &hi2c1);
+  LIS3MDL_Init(&hlis3mdl, &hi2c1);
+  MINIMU9_Init(&hminimu9, &hlsm6, &hlis3mdl, 0.03f);
+  
+  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_3);
-	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+  HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_3);
   HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_4);
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_3);
-	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
-	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
-	HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_4);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_3);
+  HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);
 
-	for (uint8_t idx = 0; idx < 6; idx++) {
+  for (uint8_t idx = 0; idx < 6; idx++)
+  {
     PWM_MOTx_SetServo(idx, 0);
   }
 
-	HAL_CAN_Start(&hcan);
+  HAL_CAN_Start(&hcan);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -815,51 +977,43 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    if (adcConvCpltStatus) {
+    if (adcConvCpltStatus)
+    {
       HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adcData, ADC_CHANNELS_NUM);
       adcConvCpltStatus = false;
     }
 
     MINIMU9_Fusion(&hminimu9);
 
-		float euler[] = {
-			(180.0f / 3.14f) * hminimu9.Euler.x,
-			(180.0f / 3.14f) * hminimu9.Euler.y,
-			(180.0f / 3.14f) * hminimu9.Euler.z
-		};
+    float euler[] = {(180.0f / 3.14f) * hminimu9.Euler.x,
+                     (180.0f / 3.14f) * hminimu9.Euler.y,
+                     (180.0f / 3.14f) * hminimu9.Euler.z};
 
-		float accel[] = {
-			hminimu9.Accel.x,
-			hminimu9.Accel.y,
-			hminimu9.Accel.z
-		};
+    float accel[] = {hminimu9.Accel.x, hminimu9.Accel.y, hminimu9.Accel.z};
 
-		float gyro[] = {
-			hminimu9.Gyro.x,
-			hminimu9.Gyro.y,
-			hminimu9.Gyro.z
-		};
+    float gyro[] = {hminimu9.Gyro.x, hminimu9.Gyro.y, hminimu9.Gyro.z};
 
-		float magnet[] = {
-			hminimu9.Mag.x,
-			hminimu9.Mag.y,
-			hminimu9.Mag.z
-		};
+    float magnet[] = {hminimu9.Mag.x, hminimu9.Mag.y, hminimu9.Mag.z};
 
-		PACKAGE_SetIMUEuler(&spiTxData, euler);
-		PACKAGE_SetIMUAccel(&spiTxData, accel);
-		PACKAGE_SetIMUGyro(&spiTxData, gyro);
-		PACKAGE_SetIMUMagnet(&spiTxData, magnet);
+    PACKAGE_SetIMUEuler(&spiTxData, euler);
+    PACKAGE_SetIMUAccel(&spiTxData, accel);
+    PACKAGE_SetIMUGyro(&spiTxData, gyro);
+    PACKAGE_SetIMUMagnet(&spiTxData, magnet);
 
 #if 1
-    if (spiTxRxCpltStatus) {
-      HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t *)&spiTxData, (uint8_t *)&spiRxData, SPI_BUFFER_SIZE);
-      if (PACKAGE_ControlPackageCheck(&spiRxData) == HAL_OK) {
+    if (spiTxRxCpltStatus)
+    {
+      HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t *)&spiTxData,
+                                  (uint8_t *)&spiRxData, SPI_BUFFER_SIZE);
+      if (PACKAGE_ControlPackageCheck(&spiRxData) == HAL_OK)
+      {
         float mot_ctrl[6];
         float cam_servo;
         float led[2];
-        if (PACKAGE_GetDesMotCtrl(&spiRxData, mot_ctrl) == HAL_OK) {
-          for (uint8_t idx = 0; idx < 6; idx++) {
+        if (PACKAGE_GetDesMotCtrl(&spiRxData, mot_ctrl) == HAL_OK)
+        {
+          for (uint8_t idx = 0; idx < 6; idx++)
+          {
 #ifndef FOC_DRIVERS_MODE
             PWM_MOTx_SetServo(idx, mot_ctrl[idx]);
 #else
@@ -869,26 +1023,32 @@ int main(void)
         }
 
 #ifdef HYBRID_ROV_MODE
-        for (uint8_t unit = 0; unit < UWMANIPULATOR_UNITS; unit++) {
+        for (uint8_t unit = 0; unit < UWMANIPULATOR_UNITS; unit++)
+        {
           float angle = 0.0f;
-          if (PACKAGE_GetDesManQ(&spiRxData, unit, &angle) == HAL_OK) {
+          if (PACKAGE_GetDesManQ(&spiRxData, unit, &angle) == HAL_OK)
+          {
             UWManipulator_SetPosition(&huwman, unit, angle);
           }
         }
 
         uint8_t state = 0;
-        if (PACKAGE_GetDesManGripState(&spiRxData, &state) == HAL_OK) {
+        if (PACKAGE_GetDesManGripState(&spiRxData, &state) == HAL_OK)
+        {
           UWManipulator_SetGripState(&huwman, state);
         }
 #endif
 
-        if (PACKAGE_GetDesCamServo(&spiRxData, &cam_servo) == HAL_OK) {
-          //printf("CAM_SERVO: %.2f\r\n", cam_servo);
+        if (PACKAGE_GetDesCamServo(&spiRxData, &cam_servo) == HAL_OK)
+        {
+          // printf("CAM_SERVO: %.2f\r\n", cam_servo);
         }
 
-        if (PACKAGE_GetDesLED(&spiRxData, led) == HAL_OK) {
-          for (uint8_t idx = 0; idx < 2; idx++) {
-            //printf("LED[%d]: %.2f\r\n", idx, led[idx]);
+        if (PACKAGE_GetDesLED(&spiRxData, led) == HAL_OK)
+        {
+          for (uint8_t idx = 0; idx < 2; idx++)
+          {
+            // printf("LED[%d]: %.2f\r\n", idx, led[idx]);
           }
         }
       }
@@ -911,7 +1071,7 @@ int main(void)
     printf("ymax: %d\n\r", ymax);
     printf("zmin: %d\n\r", zmin);
     printf("zmax: %d\n\r\n\r", zmax);
-		HAL_Delay(100);
+    HAL_Delay(100);
 #endif
 
     //printf("x:%.2f,y:%.2f,z:%.2f\n\r", (180.0f / 3.14f) * hminimu9.Euler.x, (180.0f / 3.14f) * hminimu9.Euler.y, (180.0f / 3.14f) * hminimu9.Euler.z);
@@ -1065,17 +1225,17 @@ static void MX_CAN_Init(void)
 {
 
   /* USER CODE BEGIN CAN_Init 0 */
-	CAN_FilterTypeDef sFilterConfig = {0};
-	sFilterConfig.FilterBank = 0;
-	sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
-	sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
-	sFilterConfig.FilterIdHigh = 0x0000;
-	sFilterConfig.FilterIdLow = 0x0000;
-	sFilterConfig.FilterMaskIdHigh = 0x0000;
-	sFilterConfig.FilterMaskIdLow = 0x0000;
-	sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
-	sFilterConfig.FilterActivation = ENABLE;
-	sFilterConfig.SlaveStartFilterBank = 14;
+  CAN_FilterTypeDef sFilterConfig = {0};
+  sFilterConfig.FilterBank = 0;
+  sFilterConfig.FilterMode = CAN_FILTERMODE_IDMASK;
+  sFilterConfig.FilterScale = CAN_FILTERSCALE_32BIT;
+  sFilterConfig.FilterIdHigh = 0x0000;
+  sFilterConfig.FilterIdLow = 0x0000;
+  sFilterConfig.FilterMaskIdHigh = 0x0000;
+  sFilterConfig.FilterMaskIdLow = 0x0000;
+  sFilterConfig.FilterFIFOAssignment = CAN_RX_FIFO0;
+  sFilterConfig.FilterActivation = ENABLE;
+  sFilterConfig.SlaveStartFilterBank = 14;
   /* USER CODE END CAN_Init 0 */
 
   /* USER CODE BEGIN CAN_Init 1 */
@@ -1099,7 +1259,7 @@ static void MX_CAN_Init(void)
   }
   /* USER CODE BEGIN CAN_Init 2 */
   HAL_CAN_ConfigFilter(&hcan, &sFilterConfig);
-	HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
+  HAL_CAN_ActivateNotification(&hcan, CAN_IT_RX_FIFO0_MSG_PENDING);
   /* USER CODE END CAN_Init 2 */
 
 }
@@ -1602,8 +1762,8 @@ static void MX_GPIO_Init(void)
 /* USER CODE BEGIN 4 */
 int stdout_putchar(int ch)
 {
-	HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
-	return ch;
+  HAL_UART_Transmit(&huart3, (uint8_t *)&ch, 1, HAL_MAX_DELAY);
+  return ch;
 }
 /* USER CODE END 4 */
 
