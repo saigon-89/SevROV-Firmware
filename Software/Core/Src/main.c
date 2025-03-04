@@ -32,8 +32,8 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
-#define FOC_DRIVERS_MODE
-#define HYBRID_ROV_MODE
+// #define FOC_DRIVERS_MODE
+// #define HYBRID_ROV_MODE
 
 #define MAX_FLOAT16 (128.0f)
 #define MIN_FLOAT16 (-MAX_FLOAT16)
@@ -395,27 +395,27 @@ HAL_StatusTypeDef PWM_MOTx_SetServo(uint8_t idx, float load)
     return HAL_ERROR;
   if (idx == 0)
   {
-    PWM_MOT3_SetServo(load);
+    PWM_MOT2_SetServo(load);
   }
   else if (idx == 1)
   {
-    PWM_MOT4_SetServo(load);
+    PWM_MOT3_SetServo(load);
   }
   else if (idx == 2)
   {
-    PWM_MOT5_SetServo(load);
+    PWM_MOT4_SetServo(load);
   }
   else if (idx == 3)
   {
-    PWM_MOT6_SetServo(load);
+    PWM_MOT5_SetServo(load);
   }
   else if (idx == 4)
   {
-    PWM_MOT7_SetServo(load);
+    PWM_MOT6_SetServo(load);
   }
   else if (idx == 5)
   {
-    PWM_MOT8_SetServo(load);
+    PWM_MOT7_SetServo(load);
   }
   return HAL_OK;
 }
@@ -713,7 +713,7 @@ static HAL_StatusTypeDef UWManipulator_SetRPM(UWManipulator_HandleTypeDef *huwma
   uint8_t msgData[8] = {0};
   uint32_t mailBoxNum = 0;
   CAN_TxHeaderTypeDef msgHeader;
-  msgHeader.StdId = UWMANIPULATOR_RPDO_COB_ID | unit | 0x001;
+  msgHeader.StdId = UWMANIPULATOR_RPDO_COB_ID | unit + 0x001;
   msgHeader.DLC = 8;
   msgHeader.TransmitGlobalTime = DISABLE;
   msgHeader.RTR = CAN_RTR_DATA;
@@ -738,7 +738,7 @@ static HAL_StatusTypeDef UWManipulator_SetPosition(
   uint8_t msgData[8] = {0};
   uint32_t mailBoxNum = 0;
   CAN_TxHeaderTypeDef msgHeader;
-  msgHeader.StdId = UWMANIPULATOR_RPDO_COB_ID | unit | 0x001;
+  msgHeader.StdId = UWMANIPULATOR_RPDO_COB_ID | unit + 0x001;
   msgHeader.DLC = 8;
   msgHeader.TransmitGlobalTime = DISABLE;
   msgHeader.RTR = CAN_RTR_DATA;
@@ -764,7 +764,7 @@ static HAL_StatusTypeDef UWManipulator_SetStep(
   uint8_t msgData[8] = {0};
   uint32_t mailBoxNum = 0;
   CAN_TxHeaderTypeDef msgHeader;
-  msgHeader.StdId = UWMANIPULATOR_RPDO_COB_ID | unit | 0x001;
+  msgHeader.StdId = UWMANIPULATOR_RPDO_COB_ID | unit + 0x001;
   msgHeader.DLC = 8;
   msgHeader.TransmitGlobalTime = DISABLE;
   msgHeader.RTR = CAN_RTR_DATA;
@@ -783,11 +783,11 @@ static HAL_StatusTypeDef UWManipulator_SetGripState(
 {
   if (state == UWMANIPULATOR_GRIP_OPEN)
   {
-    PWM_MOT1_SetServo(85.0f);
+    PWM_MOT1_SetServo(75.0f);
   }
   else if (state == UWMANIPULATOR_GRIP_CLOSE)
   {
-    PWM_MOT1_SetServo(-85.0f);
+    PWM_MOT1_SetServo(-75.0f);
   }
   else if (state == UWMANIPULATOR_GRIP_STOP)
   {
@@ -943,7 +943,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   HAL_GPIO_WritePin(RPI_5V_EN_GPIO_Port, RPI_5V_EN_Pin, GPIO_PIN_SET);
   HAL_GPIO_WritePin(MODEM_12V_EN_GPIO_Port, MODEM_12V_EN_Pin, GPIO_PIN_SET);
-  //HAL_Delay(40000);
+  HAL_Delay(40000);
 
   LSM6_Init(&hlsm6, &hi2c1);
   LIS3MDL_Init(&hlis3mdl, &hi2c1);
@@ -966,6 +966,10 @@ int main(void)
   {
     PWM_MOTx_SetServo(idx, 0);
   }
+  PWM_SERVO_SetServo(0);
+  PWM_MAN1_SetDutyCycle(100);
+  PWM_MAN2_SetDutyCycle(100);
+  HAL_GPIO_WritePin(En__GPIO_Port, En__Pin, GPIO_PIN_SET);
 
   HAL_CAN_Start(&hcan);
   /* USER CODE END 2 */
@@ -977,10 +981,16 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-    if (adcConvCpltStatus)
+    static uint32_t adc_counter = 0;
+    if (adcConvCpltStatus && (adc_counter == 30))
     {
       HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adcData, ADC_CHANNELS_NUM);
       adcConvCpltStatus = false;
+      adc_counter = 0;
+    }
+    else
+    {
+      adc_counter++;
     }
 
     MINIMU9_Fusion(&hminimu9);
@@ -1001,10 +1011,13 @@ int main(void)
     PACKAGE_SetIMUMagnet(&spiTxData, magnet);
 
 #if 1
-    if (spiTxRxCpltStatus)
+    if (true)
+    // if (spiTxRxCpltStatus)
     {
-      HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t *)&spiTxData,
-                                  (uint8_t *)&spiRxData, SPI_BUFFER_SIZE);
+      //HAL_SPI_TransmitReceive_DMA(&hspi1, (uint8_t *)&spiTxData,
+      //                            (uint8_t *)&spiRxData, SPI_BUFFER_SIZE);
+      HAL_SPI_TransmitReceive(&hspi1, (uint8_t *)&spiTxData,
+                              (uint8_t *)&spiRxData, SPI_BUFFER_SIZE, 30);
       if (PACKAGE_ControlPackageCheck(&spiRxData) == HAL_OK)
       {
         float mot_ctrl[6];
@@ -1041,40 +1054,30 @@ int main(void)
 
         if (PACKAGE_GetDesCamServo(&spiRxData, &cam_servo) == HAL_OK)
         {
-          // printf("CAM_SERVO: %.2f\r\n", cam_servo);
+          PWM_SERVO_SetServo(cam_servo);
         }
 
         if (PACKAGE_GetDesLED(&spiRxData, led) == HAL_OK)
         {
-          for (uint8_t idx = 0; idx < 2; idx++)
-          {
-            // printf("LED[%d]: %.2f\r\n", idx, led[idx]);
+          if (led[0] > 50.0f) {
+            PWM_MAN1_SetDutyCycle(15.0f);
+            HAL_GPIO_WritePin(Dir1_GPIO_Port, Dir1_Pin, GPIO_PIN_SET);
+          } else {
+            PWM_MAN1_SetDutyCycle(100.0f);
+            HAL_GPIO_WritePin(Dir1_GPIO_Port, Dir1_Pin, GPIO_PIN_RESET);
+          }
+          if (led[1] > 50.0f) {
+            PWM_MAN2_SetDutyCycle(15.0f);
+            HAL_GPIO_WritePin(Dir2_GPIO_Port, Dir2_Pin, GPIO_PIN_SET);
+          } else {
+            PWM_MAN2_SetDutyCycle(100.0f);
+            HAL_GPIO_WritePin(Dir2_GPIO_Port, Dir2_Pin, GPIO_PIN_RESET);
           }
         }
       }
-      spiTxRxCpltStatus = false;
+     // spiTxRxCpltStatus = false;
     }
 #endif
-
-#if 0
-    static int32_t xmin = 0, xmax = 0, ymin = 0, ymax = 0, zmin = 0, zmax = 0;
-    LIS3MDL_Read_Mag(&hlis3mdl);
-    if (xmin > hlis3mdl.Mag.x) xmin = hlis3mdl.Mag.x;
-    if (xmax < hlis3mdl.Mag.x) xmax = hlis3mdl.Mag.x;
-    if (ymin > hlis3mdl.Mag.y) ymin = hlis3mdl.Mag.y;
-    if (ymax < hlis3mdl.Mag.y) ymax = hlis3mdl.Mag.y;
-    if (zmin > hlis3mdl.Mag.z) zmin = hlis3mdl.Mag.z;
-    if (zmax < hlis3mdl.Mag.z) zmax = hlis3mdl.Mag.z;
-    printf("xmin: %d\n\r", xmin);
-    printf("xmax: %d\n\r", xmax);
-    printf("ymin: %d\n\r", ymin);
-    printf("ymax: %d\n\r", ymax);
-    printf("zmin: %d\n\r", zmin);
-    printf("zmax: %d\n\r\n\r", zmax);
-    HAL_Delay(100);
-#endif
-
-    //printf("x:%.2f,y:%.2f,z:%.2f\n\r", (180.0f / 3.14f) * hminimu9.Euler.x, (180.0f / 3.14f) * hminimu9.Euler.y, (180.0f / 3.14f) * hminimu9.Euler.z);
   }
   /* USER CODE END 3 */
 }
@@ -1472,7 +1475,7 @@ static void MX_TIM2_Init(void)
 
   /* USER CODE END TIM2_Init 1 */
   htim2.Instance = TIM2;
-  htim2.Init.Prescaler = 10;
+  htim2.Init.Prescaler = 1;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim2.Init.Period = 65535;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
